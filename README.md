@@ -270,3 +270,8 @@ We’ve prepared a separate document with **all diagrams** for easier understand
 Built with ❤️ on **[Zama’s FHEVM](https://zama.ai)**.
 
 Confidential Bomb isn’t just a mini-game — it’s the **hello world of private, verifiable Web3 gaming**.
+
+## Contact
+
+- GitHub: [https://github.com/phamnhungoctuan](https://github.com/phamnhungoctuan)
+- Twitter: [https://x.com/tuanphamit](https://x.com/tuanphamit)
