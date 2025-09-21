@@ -8,18 +8,18 @@ import { getErrorMessage } from "./errors";
 const ROWS = 3;
 const COLS = 3;
 const TOTAL_TILES = ROWS * COLS;
+const BOMB_COUNT = 2; // 🔥 Chỉ còn 2 bom
 
 let VERIFY_SERVER = import.meta.env.VITE_VERIFY_SERVER as string;
 if (!VERIFY_SERVER) {
   VERIFY_SERVER = "https://confidential-bomb-verify.vercel.app/verify";
 }
 
-
 function generateBoard(): number[][] {
   const out: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   const bombPositions = new Set<number>();
 
-  while (bombPositions.size < 3) {
+  while (bombPositions.size < BOMB_COUNT) {
     bombPositions.add(Math.floor(Math.random() * TOTAL_TILES));
   }
 
@@ -45,7 +45,9 @@ function openVerify(gameId: number, proof: any) {
   })
     .then((res) => res.text())
     .then((html) => win && win.document.write(html))
-    .catch((err) => win && win.document.write(`<p style="color:red">Error: ${err.message}</p>`));
+    .catch(
+      (err) => win && win.document.write(`<p style="color:red">Error: ${err.message}</p>`)
+    );
 }
 
 export default function App() {
@@ -177,11 +179,11 @@ export default function App() {
     } else {
       const newSafe = state.safeCount + 1;
       setState({ safeCount: newSafe, boom: false });
-      if (newSafe === TOTAL_TILES - 3) {
+      if (newSafe === TOTAL_TILES - BOMB_COUNT) {
         setIsActive(false);
         setCanPick(false);
         setShowAll(true);
-        setStatusMsg("🏆 You cleared all safe tiles!");
+        setStatusMsg("🏆 You cleared all 7 safe tiles!");
         setProofJson({ board: board.flat(), seed, player: account, boardSize: TOTAL_TILES });
       }
     }
@@ -205,9 +207,19 @@ export default function App() {
           )}
         </div>
 
+        {/* 💡 Chú thích gameplay */}
+        {!isActive && !proofJson && (
+          <p style={{ marginTop: 12, fontSize: 14, color: "#aaa" }}>
+            💡 Tip: There are <b>{BOMB_COUNT} bombs</b>. Open all{" "}
+            <b>{TOTAL_TILES - BOMB_COUNT} safe tiles</b> to win!
+          </p>
+        )}
+
         {loadingStep && (
           <div style={{ marginTop: 16 }}>
-            {loadingStep === "encrypt" && <progress value={progress} max={100} style={{ width: "60%" }} />}
+            {loadingStep === "encrypt" && (
+              <progress value={progress} max={100} style={{ width: "60%" }} />
+            )}
             <p>{statusMsg}</p>
           </div>
         )}
@@ -249,10 +261,16 @@ export default function App() {
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: 28,
-                    cursor: opened || state.boom || !isActive || !canPick ? "not-allowed" : "pointer",
+                    cursor:
+                      opened || state.boom || !isActive || !canPick
+                        ? "not-allowed"
+                        : "pointer",
                     userSelect: "none",
-                    boxShadow: opened ? "0 0 6px rgba(255,255,255,0.3)" : "inset 0 0 6px #000",
-                    animation: !opened && canPick && !state.boom ? "pulse 1.5s infinite" : "none",
+                    boxShadow: opened
+                      ? "0 0 6px rgba(255,255,255,0.3)"
+                      : "inset 0 0 6px #000",
+                    animation:
+                      !opened && canPick && !state.boom ? "pulse 1.5s infinite" : "none",
                   }}
                 >
                   {content}
@@ -265,7 +283,10 @@ export default function App() {
         {!isActive && proofJson && gameId && (
           <div style={{ marginTop: 20 }}>
             <button onClick={handleStart}>🔄 New Game</button>
-            <button onClick={() => openVerify(gameId, proofJson)} style={{ marginLeft: 12 }}>
+            <button
+              onClick={() => openVerify(gameId, proofJson)}
+              style={{ marginLeft: 12 }}
+            >
               🔎 Verify Fairness
             </button>
           </div>
@@ -284,7 +305,12 @@ export default function App() {
       >
         <p style={{ margin: "6px 0" }}>
           Using <strong>FHEVM</strong> technology from{" "}
-          <a href="https://zama.ai" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb" }}>
+          <a
+            href="https://zama.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#bbb" }}
+          >
             ZAMA
           </a>
         </p>
