@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Author: TuanPhamIT
 pragma solidity ^0.8.27;
 
 import {
@@ -8,8 +9,7 @@ import {
 } from "@fhevm/solidity/lib/FHE.sol";
 import { SepoliaConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 
-/// @title ConfidentialBomb (single ciphertext mode)
-/// @notice A Minesweeper-style game where the board is packed into one ciphertext (up to 64 tiles).
+/// @title ConfidentialBomb - I using single ciphertext mode
 /// @dev The board is represented as a bitmap. Each bit is 0 = safe, 1 = bomb.
 contract ConfidentialBomb is SepoliaConfig {
     enum State { Active, Ended }
@@ -71,6 +71,8 @@ contract ConfidentialBomb is SepoliaConfig {
 
     // -------- Play --------
     /// @notice Open a tile and emit an encrypted result indicating if it is a bomb.
+    // @param gameId ID of the game.
+    // @param index Index of the tile to open (0-based).
     function pickTile(uint256 gameId, uint8 index) external {
         Game storage g = games[gameId];
         require(g.state == State.Active, "Game ended");
@@ -92,6 +94,7 @@ contract ConfidentialBomb is SepoliaConfig {
     }
 
     /// @notice End the game manually.
+    // @param gameId ID of the game to end.
     function endGame(uint256 gameId) external {
         Game storage g = games[gameId];
         require(msg.sender == g.player, "Not your game");
@@ -102,6 +105,8 @@ contract ConfidentialBomb is SepoliaConfig {
 
     // -------- Provably-Fair Reveal --------
     /// @notice Reveal the seed used to generate the board.
+    // @param gameId ID of the game.
+    // @param seed The original seed used to generate the board.
     function revealSeed(uint256 gameId, uint256 seed) external {
         Game storage g = games[gameId];
         require(msg.sender == g.player, "Not your game");
@@ -114,6 +119,9 @@ contract ConfidentialBomb is SepoliaConfig {
     }
 
     /// @notice Reveal the full plaintext board for verification.
+    /// @param gameId ID of the game.
+    /// @param plainBoard The full plaintext board as a 64-bit integer.
+    /// Each bit represents a tile: 0 = safe, 1 = bomb.
     function revealGame(uint256 gameId, uint64 plainBoard) external {
         Game storage g = games[gameId];
         require(msg.sender == g.player, "Not your game");
