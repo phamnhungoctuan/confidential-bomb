@@ -28,14 +28,11 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ---
 
-## ✨ Highlights
+## ✨ Introduction my game
 
 * Simple gameplay — choose tiles, avoid bombs.
 * Encrypted boards — bomb positions hidden with **Fully Homomorphic Encryption (FHE)**.
 * Provably fair — every move is verifiable on-chain.
-* Decentralized — deployed on Ethereum Sepolia testnet.
-* Wallet ready — connect via MetaMask and play instantly.
-
 ---
 
 ## 🛠 Tech Stack
@@ -43,7 +40,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 * **Smart Contracts** — Solidity + Hardhat
 * **Frontend** — React + TypeScript + Ethers.js
 * **Encryption/Decryption** — [FHEVM SDK](https://docs.zama.ai/fhevm)
-* **Wallet** — MetaMask
+* **Wallet** — EVM MetaMask
 * **Network** — Ethereum Sepolia
 
 ---
@@ -181,6 +178,21 @@ euint64 bitVal  = FHE.and(shifted, FHE.asEuint64(1));
 bytes memory isBombCipher = abi.encode(FHE.eq(bitVal, FHE.asEuint64(1)));
 ```
 
+And to verify decrypted results:
+
+```
+// Decrypt ciphertexts (handles) from contract
+const results = await instance.userDecrypt(
+  handleContractPairs,    // encrypted handles from /verify
+  keypair.privateKey,     // user private key
+  keypair.publicKey,      // user public key
+  signature,              // signed authorization
+  contractAddresses,      // target contract(s)
+  signerAddress,          // address of the signer
+  startTimeStamp,         // validity start
+  durationDays            // validity duration
+);
+```
 ---
 
 ## Verification Mechanism
