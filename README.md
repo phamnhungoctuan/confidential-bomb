@@ -11,6 +11,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 > * Deploy and interact with your **first confidential smart contract**.
 > * Learn the complete flow: **encryption → computation → decryption → verification**.
 > * Get inspired to build more advanced confidential dApps.
+> * This tutorial assumes zero cryptography background, you’ll just follow a familiar dApp workflow.
 
 Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gaming.
 
@@ -165,6 +166,7 @@ function packBoard(board: number[]): bigint {
 }
 
 // Encrypt once with relayer
+// Refer: https://docs.zama.ai/protocol/relayer-sdk-guides/fhevm-relayer/input
 const buf = fhevm.createEncryptedInput(contractAddr, userAddr);
 buf.add64(packedBoard);
 const result = await buf.encrypt();
@@ -182,6 +184,7 @@ And to verify decrypted results:
 
 ```
 // Decrypt ciphertexts (handles) from contract
+// Refer document**: https://docs.zama.ai/protocol/relayer-sdk-guides/fhevm-relayer/decryption/user-decryption
 const results = await instance.userDecrypt(
   handleContractPairs,    // encrypted handles from /verify
   keypair.privateKey,     // user private key

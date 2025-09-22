@@ -1,3 +1,26 @@
+## 🐣 Beginner Onboarding Flow
+
+Refer: https://docs.zama.ai/protocol/protocol/overview
+
+<p align="center">  
+  <img src="./image.png"/>  
+</p>  
+
+
+```mermaid
+graph TD;
+    A[👩‍💻 Developer] --> B[Write simple Solidity contract]
+    B --> C[Notice: Normally inputs are public]
+    C --> D[Upgrade to FHEVM]
+    D --> E[Encrypt inputs with SDK<br/>before sending to chain]
+    E --> F[Contract runs logic<br/>without seeing real values]
+    F --> G[Decrypt outputs locally<br/>with your keypair]
+    G --> H[Verify fairness<br/>using commit hash]
+```
+
+**Explanation:**
+This flow is designed for developers who have *no prior knowledge of FHE or cryptography*. You just follow the same steps you already know from building on Ethereum — but add a simple “encrypt before sending” and “decrypt after receiving.” The SDK handles the heavy math, so you can focus entirely on writing and running your dApp.
+
 # 📊 Flows & Diagrams
 
 This document provides visual diagrams that explain the key flows in **Confidential Bomb (1 ciphertext/board mode)**:
