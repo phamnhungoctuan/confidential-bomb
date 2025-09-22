@@ -115,7 +115,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
    ```
 
    ```
-   ✅ ConfidentialBomb deployed at: 0xF3c0256EfaD525415Ad86d7Ba577B05CCC6A52E1
+   ✅ ConfidentialBomb deployed at: 0xdc185c25FA6efB17307285454e80d4D86d3236C6
    ```
 
 👉 **Note:** Copy the deployed contract address (e.g. `0xF3c0...`) and update both frontend & backend `.env`.
@@ -181,7 +181,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
 * 🎮 **Play** → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
 * 🔎 **Verify** → [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
-* 📜 **Contract (Sepolia)** → [0xF3c0256EfaD525415Ad86d7Ba577B05CCC6A52E1](https://sepolia.etherscan.io/address/0xF3c0256EfaD525415Ad86d7Ba577B05CCC6A52E1)
+* 📜 **Contract (Sepolia)** → [0xdc185c25FA6efB17307285454e80d4D86d3236C6](https://sepolia.etherscan.io/address/0xdc185c25FA6efB17307285454e80d4D86d3236C6)
 
 ---
 
@@ -231,7 +231,7 @@ We’ve prepared a separate document with **all diagrams** for easier understand
 
 ## ⚡ Performance Notes
 
-* Current encryption (via worker) for a full board can take **\~14 seconds** on typical hardware:
+* Current encryption (via worker) for a full board can take **\~12 seconds** on typical hardware:
 
   ```
   buf.encrypt() worker: 11602 ms

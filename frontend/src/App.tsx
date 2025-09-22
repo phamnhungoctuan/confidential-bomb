@@ -4,55 +4,45 @@ import { ethers } from "ethers";
 import { createGame } from "./hooks/useBombs";
 import ConfidentialBombAbi from "./abi/ConfidentialBomb.json";
 import { getErrorMessage } from "./errors";
+import { initSDK, createInstance, SepoliaConfig } from "@zama-fhe/relayer-sdk/bundle";
+
+let VERIFY_SERVER = import.meta.env.VITE_VERIFY_SERVER as string;
+if (!VERIFY_SERVER) {
+  VERIFY_SERVER = "https://confidential-bomb-verify.vercel.app/api/verify";
+}
 
 const ROWS = 3;
 const COLS = 3;
 const TOTAL_TILES = ROWS * COLS;
-const BOMB_COUNT = 2; // 🔥 Chỉ còn 2 bom
-
-let VERIFY_SERVER = import.meta.env.VITE_VERIFY_SERVER as string;
-if (!VERIFY_SERVER) {
-  VERIFY_SERVER = "https://confidential-bomb-verify.vercel.app/verify";
-}
+const BOMB_COUNT = 2;
 
 function generateBoard(): number[][] {
-  const out: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  const out: number[][] = Array.from({ length: ROWS }, () =>
+    Array(COLS).fill(0)
+  );
   const bombPositions = new Set<number>();
-
   while (bombPositions.size < BOMB_COUNT) {
     bombPositions.add(Math.floor(Math.random() * TOTAL_TILES));
   }
-
   bombPositions.forEach((pos) => {
     const r = Math.floor(pos / COLS);
     const c = pos % COLS;
     out[r][c] = 1;
   });
-
   return out;
 }
 
-function shortAddr(addr: string) {
-  return addr.slice(0, 6) + "..." + addr.slice(-4);
-}
-
-function openVerify(gameId: number, proof: any) {
-  const win = window.open("", "_blank");
-  fetch(VERIFY_SERVER, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ gameId, proofJson: proof }),
-  })
-    .then((res) => res.text())
-    .then((html) => win && win.document.write(html))
-    .catch(
-      (err) => win && win.document.write(`<p style="color:red">Error: ${err.message}</p>`)
-    );
+function shortAddr(addr: any) {
+  if (!addr) return "";
+  const s = String(addr);
+  return s.slice(0, 6) + "..." + s.slice(-4);
 }
 
 export default function App() {
   const [account, setAccount] = useState<string | null>(null);
-  const [loadingStep, setLoadingStep] = useState<"" | "encrypt" | "confirm" | "onchain">("");
+  const [loadingStep, setLoadingStep] = useState<
+    "" | "encrypt" | "confirm" | "onchain"
+  >("");
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
 
@@ -69,11 +59,21 @@ export default function App() {
 
   const [proofJson, setProofJson] = useState<any | null>(null);
 
+  // 🔎 Modal states
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyHtml, setVerifyHtml] = useState<string | null>(null);
+  const [verifyStep, setVerifyStep] = useState<
+    "" | "fetch" | "sign" | "decrypt" | "done"
+  >("");
+
   useEffect(() => {
     (async () => {
       if (window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({ method: "eth_accounts" });
+          const accounts = await window.ethereum.request({
+            method: "eth_accounts",
+          });
           if (accounts && accounts.length > 0) setAccount(accounts[0]);
         } catch {}
       }
@@ -82,12 +82,10 @@ export default function App() {
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("⚠️ MetaMask not detected");
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts && accounts.length > 0) setAccount(accounts[0]);
-    } catch (err) {
-      console.error("Connect failed:", err);
-    }
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    if (accounts && accounts.length > 0) setAccount(accounts[0]);
   };
 
   const disconnectWallet = () => {
@@ -98,6 +96,7 @@ export default function App() {
     setProofJson(null);
   };
 
+  // 🎮 Start new game
   const handleStart = async () => {
     if (!account) return setStatusMsg("⚠️ Please connect your wallet");
 
@@ -116,11 +115,13 @@ export default function App() {
     setLoadingStep("encrypt");
     setStatusMsg("🔐 Encrypting board...");
 
-    setProgress(0);
     const totalTime = 4000;
     const start = Date.now();
     const timer = setInterval(() => {
-      const pct = Math.min(100, Math.floor(((Date.now() - start) / totalTime) * 100));
+      const pct = Math.min(
+        100,
+        Math.floor(((Date.now() - start) / totalTime) * 100)
+      );
       setProgress(pct);
       if (pct === 100) clearInterval(timer);
     }, 200);
@@ -158,6 +159,7 @@ export default function App() {
     }
   };
 
+  // Pick tile
   const handlePick = (row: number, col: number) => {
     if (!isActive || !canPick || state.boom) return;
 
@@ -175,7 +177,12 @@ export default function App() {
       setState({ ...state, boom: true });
       setShowAll(true);
       setStatusMsg("💥 BOOM! You hit a bomb.");
-      setProofJson({ board: board.flat(), seed, player: account, boardSize: TOTAL_TILES });
+      setProofJson({
+        board: board.flat(),
+        seed,
+        player: account,
+        boardSize: TOTAL_TILES,
+      });
     } else {
       const newSafe = state.safeCount + 1;
       setState({ safeCount: newSafe, boom: false });
@@ -183,22 +190,141 @@ export default function App() {
         setIsActive(false);
         setCanPick(false);
         setShowAll(true);
-        setStatusMsg("🏆 You cleared all 7 safe tiles!");
-        setProofJson({ board: board.flat(), seed, player: account, boardSize: TOTAL_TILES });
+        setStatusMsg("🏆 You cleared all safe tiles!");
+        setProofJson({
+          board: board.flat(),
+          seed,
+          player: account,
+          boardSize: TOTAL_TILES,
+        });
       }
     }
   };
 
+  // Verify fairness
+const openVerify = async (gameId: number, account: string) => {
+  setShowVerifyModal(true);
+  setVerifyLoading(true);
+  setVerifyHtml(null);
+  setVerifyStep("fetch");
+
+  try {
+    // 1) Fetch ciphertexts
+    const resp = await fetch(VERIFY_SERVER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameId }),
+    });
+    if (!resp.ok) throw new Error("Prepare-decrypt failed");
+    const { ciphertexts, contractAddress } = await resp.json();
+
+    await initSDK();
+    const instance = await createInstance(SepoliaConfig);
+
+    // 2) Build signature
+    setVerifyStep("sign");
+    const keypair = instance.generateKeypair();
+    const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+    const durationDays = "10";
+    const contractAddresses = [contractAddress];
+    const eip712 = instance.createEIP712(
+      keypair.publicKey,
+      contractAddresses,
+      startTimeStamp,
+      durationDays
+    );
+
+    const provider = new ethers.BrowserProvider(window.ethereum as any);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+    const signature = await signer.signTypedData(
+      eip712.domain,
+      {
+        UserDecryptRequestVerification:
+          eip712.types.UserDecryptRequestVerification,
+      },
+      eip712.message
+    );
+
+    // 3) Decrypt
+    setVerifyStep("decrypt");
+    const handleContractPairs = ciphertexts.map((h: string) => ({
+      handle: h,
+      contractAddress,
+    }));
+
+    const results = await instance.userDecrypt(
+      handleContractPairs,
+      keypair.privateKey,
+      keypair.publicKey,
+      signature,
+      contractAddresses,
+      signerAddress,
+      startTimeStamp,
+      durationDays
+    );
+
+    const plaintexts = ciphertexts.map((h: string) => {
+      const v = results[h];
+      return typeof v === "bigint" ? Number(v) : v;
+    });
+
+    // 4) Done
+    setVerifyStep("done");
+    const gridHtml = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+        <div style="display:grid;grid-template-columns:repeat(3,64px);gap:6px">
+          ${plaintexts
+            .map((val: any) =>
+              Number(val) === 1
+                ? '<div style="background:#c0392b;width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">💣</div>'
+                : '<div style="background:#27ae60;width:64px;height:64px;border-radius:8px"></div>'
+            )
+            .join("")}
+        </div>
+        <p style="color:#bbb;margin-top:12px">Decrypted by <b>${shortAddr(
+          account
+        )}</b></p>
+        <h4 style="color:#2ecc71;margin-top:8px;text-align:center">
+          ✅ Verification Successful!<br/>
+          The decrypted board matches the original board.
+        </h4>
+      </div>
+    `;
+    setVerifyHtml(gridHtml);
+  } catch (err: any) {
+    setVerifyHtml(
+      `<div style="text-align:center;color:red">❌ Error: ${
+        err.message || String(err)
+      }</div>`
+    );
+  } finally {
+    setVerifyLoading(false);
+  }
+};
+
+
   return (
-    <div style={{ background: "#0d0d0d", color: "white", minHeight: "100vh", padding: 24 }}>
+    <div
+      style={{
+        background: "#0d0d0d",
+        color: "white",
+        minHeight: "100vh",
+        padding: 24,
+      }}
+    >
       <div style={{ textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 42, margin: "12px 0" }}>💣 Confidential Bomb 💣</h1>
+        <h1 style={{ fontSize: 42, margin: "12px 0" }}>
+          💣 Confidential Bomb 💣
+        </h1>
 
         <div style={{ marginTop: 16 }}>
           {!account ? (
             <button onClick={connectWallet}>🦊 Connect Wallet</button>
           ) : (
-            <button onClick={disconnectWallet}>{shortAddr(account)} (Disconnect)</button>
+            <button onClick={disconnectWallet}>
+              {shortAddr(account)} (Disconnect)
+            </button>
           )}
           {!isActive && !proofJson && (
             <button onClick={handleStart} style={{ marginLeft: 12 }}>
@@ -223,7 +349,9 @@ export default function App() {
             <p>{statusMsg}</p>
           </div>
         )}
-        {!loadingStep && statusMsg && <p style={{ marginTop: 16 }}>{statusMsg}</p>}
+        {!loadingStep && statusMsg && (
+          <p style={{ marginTop: 16 }}>{statusMsg}</p>
+        )}
 
         <div
           style={{
@@ -270,7 +398,9 @@ export default function App() {
                       ? "0 0 6px rgba(255,255,255,0.3)"
                       : "inset 0 0 6px #000",
                     animation:
-                      !opened && canPick && !state.boom ? "pulse 1.5s infinite" : "none",
+                      !opened && canPick && !state.boom
+                        ? "pulse 1.5s infinite"
+                        : "none",
                   }}
                 >
                   {content}
@@ -279,12 +409,11 @@ export default function App() {
             })
           )}
         </div>
-
         {!isActive && proofJson && gameId && (
           <div style={{ marginTop: 20 }}>
             <button onClick={handleStart}>🔄 New Game</button>
             <button
-              onClick={() => openVerify(gameId, proofJson)}
+              onClick={() => account && openVerify(gameId, account)}
               style={{ marginLeft: 12 }}
             >
               🔎 Verify Fairness
@@ -292,6 +421,53 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* 🔎 Modal */}
+      {showVerifyModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "#111",
+              color: "#eee",
+              padding: 24,
+              borderRadius: 12,
+              minWidth: 320,
+              maxWidth: "90%",
+              textAlign: "center",
+            }}
+          >
+            <h2>🔎 Verifying Game</h2>
+            {verifyLoading && (
+              <div>
+                {verifyStep === "fetch" && <p>📡 Fetching ciphertexts…</p>}
+                {verifyStep === "sign" && <p>🦊 Waiting for signature…</p>}
+                {verifyStep === "decrypt" && (
+                  <p>🔑 Decrypting board with FHEVM technology...</p>
+                )}
+              </div>
+            )}
+            {!verifyLoading && verifyHtml && (
+              <div dangerouslySetInnerHTML={{ __html: verifyHtml }} />
+            )}
+            <button
+              onClick={() => setShowVerifyModal(false)}
+              style={{ marginTop: 20 }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <footer
         style={{
@@ -303,7 +479,9 @@ export default function App() {
           borderTop: "1px solid #333",
         }}
       >
+        {" "}
         <p style={{ margin: "6px 0" }}>
+          {" "}
           Using <strong>FHEVM</strong> technology from{" "}
           <a
             href="https://zama.ai"
@@ -311,17 +489,19 @@ export default function App() {
             rel="noopener noreferrer"
             style={{ color: "#bbb" }}
           >
-            ZAMA
-          </a>
-        </p>
+            {" "}
+            ZAMA{" "}
+          </a>{" "}
+        </p>{" "}
         <a
           href="https://github.com/phamnhungoctuan"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: "#bbb", textDecoration: "none" }}
         >
-          🐙 https://github.com/phamnhungoctuan
-        </a>
+          {" "}
+          🐙 https://github.com/phamnhungoctuan{" "}
+        </a>{" "}
       </footer>
     </div>
   );

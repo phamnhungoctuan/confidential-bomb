@@ -5,13 +5,19 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎮 Confidential Mines | FHEVM from Zama</title>
-  <script src="https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.umd.cjs" type="text/javascript"></script>
+  <title>🎮 Confidential Bomb | FHEVM from Zama</title>
+  <script src="https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.umd.cjs"></script>
+<script>
+  window.global = window; // polyfill
+</script>
 </head>
 
 <body>
   <div id="root"></div>
+
+  <!-- App entry -->
   <script type="module" src="/src/main.tsx"></script>
+
 </body>
 
 </html>

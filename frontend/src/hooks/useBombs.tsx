@@ -93,3 +93,10 @@ export async function revealGame(gameId: number, board: number[]) {
   await tx.wait();
   return tx;
 }
+
+export async function endGame(gameId: number) {
+  const contract = await getContract();
+  const tx = await contract.endGame(gameId);
+  await tx.wait();
+  return tx;
+}

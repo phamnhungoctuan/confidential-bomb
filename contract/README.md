@@ -41,7 +41,7 @@
    ```
 
    ```
-   ✅ ConfidentialBomb deployed at: 0xF3c0256EfaD525415Ad86d7Ba577B05CCC6A52E1
+   ✅ ConfidentialBomb deployed at: 0xdc185c25FA6efB17307285454e80d4D86d3236C6
    ```
 
 👉 **Note:** Copy the deployed contract address (e.g. `0xF3c0...`) and update both frontend & backend `.env`.
