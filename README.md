@@ -11,8 +11,8 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 > * Deploy and interact with your **first confidential smart contract**.
 > * Learn the complete flow: **encryption → computation → decryption → verification**.
 > * Get inspired to build more advanced confidential dApps.
->
-> Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gaming.
+
+Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gaming.
 
 <p align="center">  
   <img src="./bomb.png" alt="Game Screenshot" width="280"/>  
@@ -22,19 +22,19 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
 ## 🌐 Demo
 
-* 🎮 Play game → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
-* 🔎 Verify API Endpoint→ [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
-* 📜 Contract deploued → [Sepolia Explorer](https://sepolia.etherscan.io/address/0x65029caA609A1E51F72B8B72c79318f3832255fd)
+* Play → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
+* Verify API → [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
+* Contract → [Sepolia Explorer](https://sepolia.etherscan.io/address/0x65029caA609A1E51F72B8B72c79318f3832255fd)
 
 ---
 
 ## ✨ Highlights
 
-* 🎮 **Simple gameplay** — choose tiles, avoid bombs.
-* 🔐 **Encrypted boards** — bomb positions hidden with **Fully Homomorphic Encryption (FHE)**.
-* ✅ **Provably fair** — every move is verifiable on-chain.
-* 🌍 **Decentralized** — deployed on Ethereum Sepolia testnet.
-* 🦊 **Wallet ready** — connect via MetaMask and play instantly.
+* Simple gameplay — choose tiles, avoid bombs.
+* Encrypted boards — bomb positions hidden with **Fully Homomorphic Encryption (FHE)**.
+* Provably fair — every move is verifiable on-chain.
+* Decentralized — deployed on Ethereum Sepolia testnet.
+* Wallet ready — connect via MetaMask and play instantly.
 
 ---
 
@@ -76,8 +76,8 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
    Output includes ABI auto-copied to frontend & backend:
 
    ```
-   ✅ ABI copied to frontend/src/abi/ConfidentialBomb.json
-   ✅ ABI copied to backend/ConfidentialBomb.json
+   ABI copied to frontend/src/abi/ConfidentialBomb.json
+   ABI copied to backend/ConfidentialBomb.json
    ```
 
 4. Deploy locally:
@@ -91,12 +91,6 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
    ```bash
    npx hardhat deploy --network sepolia
-   ```
-
-   Example:
-
-   ```
-   ✅ ConfidentialBomb deployed at: 0xYourNewContract
    ```
 
 👉 Copy contract address into `.env` files for frontend & backend.
@@ -116,7 +110,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
    ```
    VITE_CONTRACT_ADDRESS=0xYourNewContract
-   VITE_VERIFY_SERVER=http://localhost:3001/verify 
+   VITE_VERIFY_SERVER=http://localhost:3001/verify
    ```
 
 3. Run dev server:
@@ -152,52 +146,40 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
    node index.mjs
    ```
 
-
----
-
-## 🎮 Why FHE in Games?
-
-* Traditional games = **trust the server**.
-* With **FHEVM**, encrypted boards are processed and **decrypted directly on-chain**.
-* Nobody knows bomb positions until they’re decrypted move by move.
-* Ensures **privacy + fairness** → true Web3 gaming.
-
 ---
 
 ## 🔐 FHEVM in Confidential Bomb
 
-Confidential Bomb uses Zama’s **FHEVM SDK** (WASM worker) to encrypt user moves, while the **contract decrypts results** in real-time.
+In this design, the **entire board is packed into a single ciphertext**.
+Each bit represents a tile:
 
-```js
-const buf = fhevm.createEncryptedInput(contractAddress, userAddress);
+* `1` = bomb
+* `0` = safe
 
-board.forEach((v) => buf.add32(BigInt(v)));
+Only **1 ciphertext per board** is stored on-chain.
 
-const result = await buf.encrypt(); // proof for encrypted input
+```ts
+// Pack board into 64-bit bitmap
+function packBoard(board: number[]): bigint {
+  return board.reduce(
+    (acc, v, i) => (v === 1 ? acc | (1n << BigInt(i)) : acc),
+    0n
+  );
+}
+
+// Encrypt once with relayer
+const buf = fhevm.createEncryptedInput(contractAddr, userAddr);
+buf.add64(packedBoard);
+const result = await buf.encrypt();
 ```
 
-And to verify decrypted results:
+When picking a tile, the contract shifts & masks bits inside the encrypted board:
 
-```js
-// Decrypt ciphertexts (handles) from contract
-const results = await instance.userDecrypt(
-  handleContractPairs,    // encrypted handles from /verify
-  keypair.privateKey,     // user private key
-  keypair.publicKey,      // user public key
-  signature,              // signed authorization
-  contractAddresses,      // target contract(s)
-  signerAddress,          // address of the signer
-  startTimeStamp,         // validity start
-  durationDays            // validity duration
-);
+```solidity
+euint64 shifted = FHE.shr(encryptedBoard, index);
+euint64 bitVal  = FHE.and(shifted, FHE.asEuint64(1));
+bytes memory isBombCipher = abi.encode(FHE.eq(bitVal, FHE.asEuint64(1)));
 ```
-
-**Strengths**:
-
-* Local encryption in browser (privacy preserved)
-* On-chain decryption of results (fairness guaranteed)
-* Zero trust required
-* Lightweight & scalable
 
 ---
 
@@ -205,11 +187,11 @@ const results = await instance.userDecrypt(
 
 Confidential Bomb includes a **Verify Backend** (`backend/index.mjs`) so anyone can independently check game data against the contract.
 
-1. Each move and the final board are **stored as ciphertext handles on-chain**.
-2. `/verify` endpoint returns all ciphertexts for a given `gameId`.
+1. Each board is stored as **1 ciphertext handle** on-chain.
+2. `/verify` endpoint returns the handle for a given `gameId`.
 3. A verifier can:
 
-   * Fetch ciphertexts.
+   * Fetch the ciphertext.
    * Run decryption with FHEVM SDK.
    * Confirm results match the commitment.
 
@@ -226,20 +208,20 @@ Response:
 
 ```json
 {
-  "ciphertexts": ["0x0ad8...", "0x59f5...", "0xb879..."],
+  "ciphertexts": ["0x0ad8..."],
   "contractAddress": "0xYourNewContract"
 }
 ```
 
 <p align="center">  
-  <img src="./verify.png"  width="280"/>  
+  <img src="./verify.png" width="280"/>  
 </p>  
 
 Why this matters:
 
-* **Transparency** → Anyone can fetch ciphertexts.
-* **No Trust Required** → Backend only proxies contract data.
-* **Provable Fairness** → Even if frontend is compromised, results can be verified independently.
+* Transparency → Anyone can fetch ciphertexts.
+* No trust required → Backend only proxies contract data.
+* Provable fairness → Even if frontend is compromised, results can be verified independently.
 
 ---
 
@@ -255,13 +237,18 @@ See [README-flows.md](./README-flows.md) for:
 
 ## ⚡ Performance
 
-* Full board encryption: \~12s on desktop (via worker)
-* Optimized with **WebAssembly (WASM)**
-* Further speedups possible with:
+* Previous design: N ciphertexts (1 per tile) → slow (\~10–15s).
+* New design: 1 ciphertext per board → smaller payload, faster verify.
+* Current benchmark:
 
-  * Better WASM builds
-  * Parallelization
-  * Device-specific benchmarks
+  * `initSDK()` ≈ 1.5–2s
+  * `relayer.encrypt()` ≈ 10–11s (for 64-bit bitmap)
+
+Future optimizations:
+
+* Faster WASM builds
+* Parallelization in workers
+* Device-specific tuning
 
 ---
 
@@ -274,18 +261,18 @@ See [README-flows.md](./README-flows.md) for:
 
 ## ⚠️ Troubleshooting
 
-* **MetaMask won’t connect** → switch to Sepolia testnet
-* **RPC errors** → try Alchemy/Infura instead of public RPC
-* **Frontend mismatch** → check `.env` contract address
-* **Verify fails** → backend `.env` contract mismatch
-* **Tx stuck** → increase gas or get more test ETH
+* MetaMask won’t connect → switch to Sepolia testnet
+* RPC errors → try Alchemy/Infura instead of public RPC
+* Frontend mismatch → check `.env` contract address
+* Verify fails → backend `.env` contract mismatch
+* Tx stuck → increase gas or get more test ETH
 
 ---
 
 ## 🌟 Credits
 
-Built with ❤️ using **[Zama’s FHEVM](https://zama.ai)**.
-Confidential Bomb = **the hello world of private, verifiable Web3 gaming**.
+Built with **[Zama’s FHEVM](https://zama.ai)**.
+Confidential Bomb = *the hello world of private, verifiable Web3 gaming*.
 
 ---
 

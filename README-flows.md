@@ -1,6 +1,6 @@
 # 📊 Flows & Diagrams
 
-This document provides visual diagrams that explain the key flows in **Confidential Bomb**:
+This document provides visual diagrams that explain the key flows in **Confidential Bomb (1 ciphertext/board mode)**:
 
 * Gameplay logic (for players)
 * Deployment steps (for developers)
@@ -9,22 +9,24 @@ This document provides visual diagrams that explain the key flows in **Confident
 
 ---
 
-## 🎲 Game Flow (with On-Chain Decrypt)
+## 🎲 Game Flow (1 Ciphertext/Board)
 
 ```mermaid
 graph TD;
-    A[Start Game] --> B[Contract Generates Encrypted Board]
-    B --> C[Commitment Stored On-Chain]
-    C --> D[Player Picks Tile]
-    D --> E[Contract Verifies Proof + Decrypts Result]
-    E -->|Bomb| F[💥 Game Over]
-    E -->|Safe| G[Continue Picking]
-    G -->|All Safe Tiles Cleared| H[🏆 You Win]
-    F --> I[Verification Possible]
-    H --> I
-    I --> J[Verifier Fetches Ciphertexts via Backend /verify]
-    J --> K[Decrypt & Confirm Commitment]
-    K --> L[✅ Provably Fair]
+    A[Start Game] --> B[Pack Board into 64-bit Bitmap]
+    B --> C[Relayer Encrypts → Single Ciphertext]
+    C --> D[Commit Hash Stored On-Chain]
+    D --> E[Player Picks Tile]
+    E --> F[Contract Shifts + Masks Encrypted Board]
+    F --> G[Encrypted Bit Compared with 1]
+    G -->|Bomb| H[Game Over]
+    G -->|Safe| I[Continue Picking]
+    I -->|All Safe Tiles Cleared| J[You Win]
+    H --> K[Verification Possible]
+    J --> K
+    K --> L[Verifier Fetches Ciphertext via Backend /verify]
+    L --> M[Decrypt & Confirm Commitment]
+    M --> N[Provably Fair]
 ```
 
 ---
@@ -33,7 +35,7 @@ graph TD;
 
 ```mermaid
 graph TD;
-    A[Deploy Contracts] --> B[Copy Deployed Address]
+    A[Deploy Contract] --> B[Copy Deployed Address]
     B --> C[Update .env Frontend]
     B --> D[Update .env Backend]
     C --> E[Run npm run dev]
@@ -42,26 +44,28 @@ graph TD;
 
 ---
 
-## 🔄 FHEVM Workflow: Encrypt → Compute → Decrypt → Verify
+## 🔄 FHEVM Workflow (New: 1 Ciphertext per Board)
 
 ```mermaid
 sequenceDiagram
     participant User as User (Browser)
-    participant Worker as FHEVM Worker (WASM)
+    participant Relayer as Relayer SDK
     participant Contract as Smart Contract (Sepolia)
-    participant Verify as Verify Backend
+    participant Backend as Verify Backend
 
-    User->>Worker: Select tile(s)
-    Worker->>Worker: buf.add32(BigInt(tileValue))
-    Worker->>Worker: buf.encrypt() → encryptedInput + proof
-    Worker->>Contract: Send encryptedInput + proof
-    Contract->>Contract: Verify proof & compute
-    Contract->>Contract: Decrypt result on-chain
-    Contract-->>User: Plaintext result (safe/bomb)
-    User->>Verify: Request ciphertexts (/verify?gameId)
-    Verify->>Contract: Fetch all encrypted tiles
-    Verify-->>User: Ciphertexts + contract address
-    User->>Worker: Run userDecrypt() to confirm fairness
+    User->>Relayer: Pack board → buf.add64(bitmap)
+    Relayer->>Relayer: buf.encrypt() → encryptedBoard + proof
+    Relayer->>Contract: createGame(encryptedBoard, proof, commitHash)
+    Contract->>Contract: Store encryptedBoard + commitHash
+    User->>Contract: pickTile(index)
+    Contract->>Contract: Shift & mask encryptedBoard
+    Contract->>Contract: Emit encrypted isBombCiphertext
+    User->>Backend: POST /verify { gameId }
+    Backend->>Contract: getEncryptedBoard(gameId)
+    Contract-->>Backend: Single ciphertext handle
+    Backend-->>User: { ciphertext, contractAddress }
+    User->>Relayer: userDecrypt(handle, keypair, signature)
+    Relayer-->>User: Plaintext board for verification
 ```
 
 ---
@@ -75,11 +79,9 @@ sequenceDiagram
     participant Contract as ConfidentialBomb Contract
 
     Verifier->>Backend: POST /verify { gameId }
-    Backend->>Contract: getEncryptedBoardLength(gameId)
-    Contract-->>Backend: Board length (N)
-    Backend->>Contract: getEncryptedTile(gameId, i) for i=0..N-1
-    Contract-->>Backend: Ciphertext handles
-    Backend-->>Verifier: { ciphertexts[], contractAddress }
+    Backend->>Contract: getEncryptedBoard(gameId)
+    Contract-->>Backend: Single ciphertext handle
+    Backend-->>Verifier: { ciphertext, contractAddress }
     Verifier->>Verifier: Run FHEVM SDK userDecrypt()
     Verifier-->>Verifier: ✅ Confirm commitment matches
 ```
@@ -88,6 +90,7 @@ sequenceDiagram
 
 ### 🔑 Key Takeaways
 
-* **Backend is stateless** → It only fetches ciphertexts from the contract.
-* **Verifier independence** → Anyone can run decryption offline with FHEVM SDK.
-* **Provable fairness** → Ensures the game outcome is auditable and transparent.
+* Board is stored as **1 ciphertext** instead of many → faster verification.
+* Contract checks tiles by shifting & masking bits.
+* Backend is **stateless** → only proxies ciphertext from the contract.
+* Any third party can verify game fairness with **FHEVM SDK**.
