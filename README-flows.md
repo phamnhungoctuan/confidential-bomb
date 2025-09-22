@@ -1,25 +1,31 @@
 # 📊 Flows & Diagrams
 
-This document provides visual diagrams that explain the key flows in **Confidential Bomb**:  
-- Gameplay logic (for players)  
-- Deployment steps (for developers)  
-- FHEVM workflow (for encryption/computation/decryption)  
+This document provides visual diagrams that explain the key flows in **Confidential Bomb**:
+
+* Gameplay logic (for players)
+* Deployment steps (for developers)
+* FHEVM workflow (encryption → computation → decryption → verification)
+* Verification backend workflow
 
 ---
 
-## 🎲 Game Flow
+## 🎲 Game Flow (with On-Chain Decrypt)
 
 ```mermaid
 graph TD;
-    A[Start Game] --> B[Random Board Generated & Encrypted]
+    A[Start Game] --> B[Contract Generates Encrypted Board]
     B --> C[Commitment Stored On-Chain]
-    C --> D[Pick Tiles]
-    D -->|Hit Bomb| E[💥 Game Over]
-    D -->|Clear All Safe Tiles| F[🏆 You Win]
-    F --> G[Reveal Board + Seed]
-    G --> H[Verify via Server]
-    E --> G
-````
+    C --> D[Player Picks Tile]
+    D --> E[Contract Verifies Proof + Decrypts Result]
+    E -->|Bomb| F[💥 Game Over]
+    E -->|Safe| G[Continue Picking]
+    G -->|All Safe Tiles Cleared| H[🏆 You Win]
+    F --> I[Verification Possible]
+    H --> I
+    I --> J[Verifier Fetches Ciphertexts via Backend /verify]
+    J --> K[Decrypt & Confirm Commitment]
+    K --> L[✅ Provably Fair]
+```
 
 ---
 
@@ -36,33 +42,52 @@ graph TD;
 
 ---
 
-## 🔄 FHEVM Workflow: Encrypt → Compute → Decrypt
+## 🔄 FHEVM Workflow: Encrypt → Compute → Decrypt → Verify
 
 ```mermaid
 sequenceDiagram
     participant User as User (Browser)
     participant Worker as FHEVM Worker (WASM)
     participant Contract as Smart Contract (Sepolia)
-    participant Verify as Verify Server
+    participant Verify as Verify Backend
 
     User->>Worker: Select tile(s)
-    Worker->>Worker: buf.add32(BigInt(value))
-    Worker->>Worker: buf.encrypt() → encryptedTiles + inputProof
-    Worker->>Contract: Send encryptedTiles + proof
-    Contract->>Contract: Compute on encrypted inputs
-    Contract->>User: Encrypted result
-    User->>Verify: Request board reveal + proof
-    Verify->>Contract: Check commitment vs revealed board
-    Verify-->>User: ✅ Verification passed
+    Worker->>Worker: buf.add32(BigInt(tileValue))
+    Worker->>Worker: buf.encrypt() → encryptedInput + proof
+    Worker->>Contract: Send encryptedInput + proof
+    Contract->>Contract: Verify proof & compute
+    Contract->>Contract: Decrypt result on-chain
+    Contract-->>User: Plaintext result (safe/bomb)
+    User->>Verify: Request ciphertexts (/verify?gameId)
+    Verify->>Contract: Fetch all encrypted tiles
+    Verify-->>User: Ciphertexts + contract address
+    User->>Worker: Run userDecrypt() to confirm fairness
 ```
-
-### Key Takeaways
-
-* **Encrypt:** Done locally in the browser worker → privacy preserved.
-* **Compute:** Happens on-chain via FHEVM → no plaintext exposed.
-* **Decrypt & Verify:** Only at reveal stage → ensures fairness and provable results.
 
 ---
 
-👉 Use this document as a **visual supplement** to the main [README](./README.md).
+## 🧐 Verification Backend Workflow
 
+```mermaid
+sequenceDiagram
+    participant Verifier as Verifier (Client / Auditor)
+    participant Backend as Verify Backend (Express.js)
+    participant Contract as ConfidentialBomb Contract
+
+    Verifier->>Backend: POST /verify { gameId }
+    Backend->>Contract: getEncryptedBoardLength(gameId)
+    Contract-->>Backend: Board length (N)
+    Backend->>Contract: getEncryptedTile(gameId, i) for i=0..N-1
+    Contract-->>Backend: Ciphertext handles
+    Backend-->>Verifier: { ciphertexts[], contractAddress }
+    Verifier->>Verifier: Run FHEVM SDK userDecrypt()
+    Verifier-->>Verifier: ✅ Confirm commitment matches
+```
+
+---
+
+### 🔑 Key Takeaways
+
+* **Backend is stateless** → It only fetches ciphertexts from the contract.
+* **Verifier independence** → Anyone can run decryption offline with FHEVM SDK.
+* **Provable fairness** → Ensures the game outcome is auditable and transparent.
