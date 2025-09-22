@@ -247,7 +247,7 @@ Why this matters:
 
 See [README-flows.md](./README-flows.md) for:
 
-* 🎲 Updated Game flow (with decrypt)
+* 🎲 Game flow
 * 📌 Deployment flow
 * 🔄 FHEVM workflow
 
