@@ -50,7 +50,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ## 🚀 Getting Started
 
-### 📜 Contracts
+### Contracts
 
 1. Clone & install:
 
@@ -97,7 +97,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ---
 
-### 🎨 Frontend
+### Frontend
 
 1. Install deps:
 
@@ -123,7 +123,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ---
 
-### 🔎 Verify Backend
+### Verify Backend
 
 1. Install deps:
 
@@ -148,7 +148,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ---
 
-## 🔐 FHEVM in Confidential Bomb
+## FHEVM in Confidential Bomb
 
 In this design, the **entire board is packed into a single ciphertext**.
 Each bit represents a tile:
@@ -183,7 +183,7 @@ bytes memory isBombCipher = abi.encode(FHE.eq(bitVal, FHE.asEuint64(1)));
 
 ---
 
-## 🧐 Verification Mechanism
+## Verification Mechanism
 
 Confidential Bomb includes a **Verify Backend** (`backend/index.mjs`) so anyone can independently check game data against the contract.
 
@@ -229,29 +229,11 @@ Why this matters:
 
 See [README-flows.md](./README-flows.md) for:
 
-* 🎲 Game flow
-* 📌 Deployment flow
-* 🔄 FHEVM workflow
+- Game flow
+- Deployment flow
+- FHEVM workflow
 
 ---
-
-## ⚡ Performance
-
-* Previous design: N ciphertexts (1 per tile) → slow (\~10–15s).
-* New design: 1 ciphertext per board → smaller payload, faster verify.
-* Current benchmark:
-
-  * `initSDK()` ≈ 1.5–2s
-  * `relayer.encrypt()` ≈ 10–11s (for 64-bit bitmap)
-
-Future optimizations:
-
-* Faster WASM builds
-* Parallelization in workers
-* Device-specific tuning
-
----
-
 ## 📚 Resources
 
 * [FHEVM Docs](https://docs.zama.ai/fhevm)

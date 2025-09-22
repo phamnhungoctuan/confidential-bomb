@@ -9,7 +9,7 @@ This document provides visual diagrams that explain the key flows in **Confident
 
 ---
 
-## 🎲 Game Flow (1 Ciphertext/Board)
+## 🎲 Game Flow
 
 ```mermaid
 graph TD;
@@ -44,7 +44,7 @@ graph TD;
 
 ---
 
-## 🔄 FHEVM Workflow (New: 1 Ciphertext per Board)
+## 🔄 FHEVM Workflow
 
 ```mermaid
 sequenceDiagram
@@ -83,14 +83,5 @@ sequenceDiagram
     Contract-->>Backend: Single ciphertext handle
     Backend-->>Verifier: { ciphertext, contractAddress }
     Verifier->>Verifier: Run FHEVM SDK userDecrypt()
-    Verifier-->>Verifier: ✅ Confirm commitment matches
+    Verifier-->>Verifier: Confirm commitment matches
 ```
-
----
-
-### 🔑 Key Takeaways
-
-* Board is stored as **1 ciphertext** instead of many → faster verification.
-* Contract checks tiles by shifting & masking bits.
-* Backend is **stateless** → only proxies ciphertext from the contract.
-* Any third party can verify game fairness with **FHEVM SDK**.
