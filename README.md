@@ -20,6 +20,14 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
 ---
 
+## 🌐 Demo
+
+* 🎮 Play → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
+* 🔎 Verify → [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
+* 📜 Contract → [Sepolia Explorer](https://sepolia.etherscan.io/address/0xdc185c25FA6efB17307285454e80d4D86d3236C6)
+
+---
+
 ## ✨ Highlights
 
 * 🎮 **Simple gameplay** — choose tiles, avoid bombs.
@@ -108,7 +116,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
    ```
    VITE_CONTRACT_ADDRESS=0xYourNewContract
-   VITE_VERIFY_SERVER=http://localhost:3001/verify
+   VITE_VERIFY_SERVER=http://localhost:3001/verify 
    ```
 
 3. Run dev server:
@@ -144,13 +152,6 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
    node index.mjs
    ```
 
----
-
-## 🌐 Demo
-
-* 🎮 Play → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
-* 🔎 Verify → [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
-* 📜 Contract → [Sepolia Explorer](https://sepolia.etherscan.io/)
 
 ---
 
@@ -229,6 +230,10 @@ Response:
   "contractAddress": "0xYourNewContract"
 }
 ```
+
+<p align="center">  
+  <img src="./verify.png"  width="280"/>  
+</p>  
 
 Why this matters:
 

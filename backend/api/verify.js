@@ -1,8 +1,13 @@
 // api/verify.js
+// This file is will for vercel serverless function
+// It fetches ciphertexts from the contract for a given gameId
+// and returns them to the frontend for decryption and verification.  
+
 import { readFile } from "fs/promises";
 import path from "path";
 import { ethers } from "ethers";
 
+// Replace with your deployed contract address from CONTRACT_ADDRESS
 const CONTRACT_ADDRESS = '0xdc185c25FA6efB17307285454e80d4D86d3236C6';
 const RPC_URL = 'https://eth-sepolia.public.blastapi.io';
 
