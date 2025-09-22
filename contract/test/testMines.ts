@@ -1,7 +1,10 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers, fhevm } from "hardhat";
 import { expect } from "chai";
-import { ConfidentialBomb, ConfidentialBomb__factory } from "../types";
+import {
+  ConfidentialBomb,
+  ConfidentialBomb__factory,
+} from "../types";
 
 type Signers = {
   deployer: HardhatEthersSigner;
@@ -16,15 +19,27 @@ async function deployFixture() {
   return { bomb, bombAddress: await bomb.getAddress() };
 }
 
-// Helper: encrypt full board in one proof
-async function encryptBoard(board: number[], contract: string, user: string) {
-  const enc = await fhevm.createEncryptedInput(contract, user);
-  board.forEach((v) => enc.add32(v));
-  const res = await enc.encrypt();
-  return { encryptedTiles: res.handles, proof: res.inputProof };
+// --- Helpers ---
+
+// Pack board into bigint (max 64 tiles)
+function packBoard(board: number[]): bigint {
+  if (board.length > 64) throw new Error("Board too large");
+  return board.reduce(
+    (acc, v, i) => (v === 1 ? acc | (1n << BigInt(i)) : acc),
+    0n
+  );
 }
 
-describe("ConfidentialBomb (ciphertext mode)", () => {
+// Encrypt one bigint as euint64
+async function encryptBoard(board: number[], contract: string, user: string) {
+  const packed = packBoard(board);
+  const enc = await fhevm.createEncryptedInput(contract, user);
+  enc.add64(packed);
+  const res = await enc.encrypt();
+  return { encryptedBoard: res.handles[0], proof: res.inputProof };
+}
+
+describe("ConfidentialBomb (1-ciphertext/board)", () => {
   let signers: Signers;
   let bomb: ConfidentialBomb;
   let bombAddress: string;
@@ -36,7 +51,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
 
   beforeEach(async function () {
     if (!fhevm.isMock) {
-      console.warn("⚠️ Skipping tests: not running on fhEVM mock");
+      console.warn("Skipping tests: not running on fhEVM mock");
       this.skip();
     }
     ({ bomb, bombAddress } = await deployFixture());
@@ -52,7 +67,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
       )
     );
 
-    const { encryptedTiles, proof } = await encryptBoard(
+    const { encryptedBoard, proof } = await encryptBoard(
       board,
       bombAddress,
       signers.alice.address
@@ -61,8 +76,9 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
     const receipt = await (
       await bomb
         .connect(signers.alice)
-        .createGame(encryptedTiles, proof, commitHash, board.length)
+        .createGame(encryptedBoard, proof, commitHash, board.length)
     ).wait();
+
     const event = receipt?.logs.find((l) => l.fragment?.name === "GameCreated");
     const gameId = event?.args?.[0];
     expect(gameId).to.not.be.undefined;
@@ -70,7 +86,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
     // Pick SAFE tile (index 0)
     await expect(bomb.connect(signers.alice).pickTile(gameId, 0)).to.not.be
       .reverted;
-    expect(await bomb.getOpenedCount(gameId)).to.eq(1);
+
     expect(await bomb.getState(gameId)).to.eq(0); // Active
 
     // End game → must allow reveal
@@ -82,9 +98,10 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
       bomb.connect(signers.alice).revealSeed(gameId, seed)
     ).to.not.be.reverted;
 
-    // Reveal plaintext board
+    // Reveal plaintext board (packed as bigint)
+    const packedPlain = packBoard(board);
     await expect(
-      bomb.connect(signers.alice).revealGame(gameId, board)
+      bomb.connect(signers.alice).revealGame(gameId, packedPlain)
     ).to.not.be.reverted;
   });
 
@@ -99,7 +116,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
       )
     );
 
-    const { encryptedTiles, proof } = await encryptBoard(
+    const { encryptedBoard, proof } = await encryptBoard(
       board,
       bombAddress,
       signers.alice.address
@@ -108,7 +125,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
     const receipt = await (
       await bomb
         .connect(signers.alice)
-        .createGame(encryptedTiles, proof, commitHash, board.length)
+        .createGame(encryptedBoard, proof, commitHash, board.length)
     ).wait();
     const gameId = receipt?.logs.find((l) => l.fragment?.name === "GameCreated")
       ?.args?.[0];
@@ -121,7 +138,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
     ).to.be.revertedWith("Commit mismatch");
   });
 
-  it("should expose ciphertext handles for verification", async () => {
+  it("should expose ciphertext handle for verification", async () => {
     const board = [0, 0, 1, 0];
     const seed = 999;
     const commitHash = ethers.keccak256(
@@ -131,7 +148,7 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
       )
     );
 
-    const { encryptedTiles, proof } = await encryptBoard(
+    const { encryptedBoard, proof } = await encryptBoard(
       board,
       bombAddress,
       signers.alice.address
@@ -140,15 +157,13 @@ describe("ConfidentialBomb (ciphertext mode)", () => {
     const receipt = await (
       await bomb
         .connect(signers.alice)
-        .createGame(encryptedTiles, proof, commitHash, board.length)
+        .createGame(encryptedBoard, proof, commitHash, board.length)
     ).wait();
     const gameId = receipt?.logs.find((l) => l.fragment?.name === "GameCreated")
       ?.args?.[0];
 
-    const len = await bomb.getEncryptedBoardLength(gameId);
-    expect(Number(len)).to.eq(board.length);
-
-    const tile0 = await bomb.getEncryptedTile(gameId, 0);
-    expect(tile0).to.not.be.undefined;
+    // Fetch ciphertext (only one per board)
+    const handle = await bomb.getEncryptedBoard(gameId);
+    expect(handle).to.not.be.undefined;
   });
 });

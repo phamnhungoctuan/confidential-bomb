@@ -25,22 +25,33 @@ app.post("/verify", async (req, res) => {
     if (gameId === undefined) return res.status(400).send("Missing gameId");
 
     const provider = new ethers.JsonRpcProvider(RPC_URL);
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ConfidentialBombAbi.abi, provider);
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      ConfidentialBombAbi.abi,
+      provider
+    );
 
-    const boardLenRaw = await contract.getEncryptedBoardLength(gameId);
-    const boardLen = Number(boardLenRaw);
-    if (!Number.isFinite(boardLen) || boardLen <= 0) {
+    // Ensure the contract has the expected getter (single ciphertext per board)
+    if (typeof contract.getEncryptedBoard !== "function") {
+      return res
+        .status(500)
+        .send(
+          "Contract does not expose getEncryptedBoard(gameId). Check deployment and ABI."
+        );
+    }
+
+    const encryptedBoard = await contract.getEncryptedBoard(gameId);
+
+    console.log("[/verify] gameId:", gameId);
+    console.log("[/verify] ciphertext handle:", encryptedBoard);
+
+    if (!encryptedBoard) {
       return res.status(400).send("No ciphertext found for this game");
     }
 
-    // fetch handles
-    const ciphertexts = await Promise.all(
-      Array.from({ length: boardLen }, (_, i) => contract.getEncryptedTile(gameId, i))
-    );
-
-    // return ciphertext handles & contract address
+    // Always return an array to keep the frontend format consistent
     res.json({
-      ciphertexts,            // array of handles (hex / bytes-like)
+      ciphertexts: [encryptedBoard],
       contractAddress: CONTRACT_ADDRESS,
     });
   } catch (err) {
@@ -50,5 +61,5 @@ app.post("/verify", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Prepare-decrypt server running on http://localhost:${PORT}`);
+  console.log(`Verify server running on http://localhost:${PORT}`);
 });

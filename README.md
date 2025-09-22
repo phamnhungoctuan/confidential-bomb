@@ -24,7 +24,7 @@ Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game i
 
 * 🎮 Play game → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
 * 🔎 Verify API Endpoint→ [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
-* 📜 Contract deploued → [Sepolia Explorer](https://sepolia.etherscan.io/address/0xdc185c25FA6efB17307285454e80d4D86d3236C6)
+* 📜 Contract deploued → [Sepolia Explorer](https://sepolia.etherscan.io/address/0x65029caA609A1E51F72B8B72c79318f3832255fd)
 
 ---
 

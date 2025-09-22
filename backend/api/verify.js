@@ -1,15 +1,14 @@
 // api/verify.js
-// This file is will for vercel serverless function
-// It fetches ciphertexts from the contract for a given gameId
-// and returns them to the frontend for decryption and verification.  
+// Vercel serverless function for fetching ciphertexts from the contract
+// Compatible with 1-ciphertext-per-board design
 
 import { readFile } from "fs/promises";
 import path from "path";
 import { ethers } from "ethers";
 
-// Replace with your deployed contract address from CONTRACT_ADDRESS
-const CONTRACT_ADDRESS = '0xdc185c25FA6efB17307285454e80d4D86d3236C6';
-const RPC_URL = 'https://eth-sepolia.public.blastapi.io';
+// Replace with your deployed contract details
+const CONTRACT_ADDRESS = "0x65029caA609A1E51F72B8B72c79318f3832255fd";
+const RPC_URL = "https://eth-sepolia.public.blastapi.io";
 
 async function loadAbi() {
   const p = path.join(process.cwd(), "ConfidentialBomb.json");
@@ -28,31 +27,39 @@ export default async function handler(req, res) {
 
   try {
     const { gameId } = req.body;
-    if (gameId === undefined) return res.status(400).send("Missing gameId");
+    if (gameId === undefined) {
+      return res.status(400).send("Missing gameId");
+    }
 
     const ConfidentialBombAbi = await loadAbi();
-
     const provider = new ethers.JsonRpcProvider(RPC_URL);
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ConfidentialBombAbi.abi, provider);
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      ConfidentialBombAbi.abi,
+      provider
+    );
 
-    const boardLenRaw = await contract.getEncryptedBoardLength(gameId);
-    const boardLen = Number(boardLenRaw);
-    if (!Number.isFinite(boardLen) || boardLen <= 0) {
+    if (typeof contract.getEncryptedBoard !== "function") {
+      return res
+        .status(500)
+        .send("Contract missing getEncryptedBoard");
+    }
+
+    const encryptedBoard = await contract.getEncryptedBoard(gameId);
+
+    if (!encryptedBoard) {
       return res.status(400).send("No ciphertext found for this game");
     }
 
-    const ciphertexts = await Promise.all(
-      Array.from({ length: boardLen }, (_, i) =>
-        contract.getEncryptedTile(gameId, i)
-      )
-    );
-
+    // Return array with 1 ciphertext for frontend consistency
     res.status(200).json({
-      ciphertexts,
+      ciphertexts: [encryptedBoard],
       contractAddress: CONTRACT_ADDRESS,
     });
   } catch (err) {
     console.error("prepare-decrypt error:", err);
-    res.status(500).send("Server error: " + (err.message || String(err)));
+    res
+      .status(500)
+      .send("Server error: " + (err?.message || String(err)));
   }
 }

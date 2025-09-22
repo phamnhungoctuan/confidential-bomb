@@ -32,6 +32,14 @@ function generateBoard(): number[][] {
   return out;
 }
 
+function unpackBoard(encoded: bigint, size: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < size; i++) {
+    out.push(((encoded >> BigInt(i)) & 1n) === 1n ? 1 : 0);
+  }
+  return out;
+}
+
 function shortAddr(addr: any) {
   if (!addr) return "";
   const s = String(addr);
@@ -209,7 +217,7 @@ const openVerify = async (gameId: number, account: string) => {
   setVerifyStep("fetch");
 
   try {
-    // 1) Fetch ciphertexts
+    // 1) Fetch ciphertext(s) từ server
     const resp = await fetch(VERIFY_SERVER, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -246,7 +254,7 @@ const openVerify = async (gameId: number, account: string) => {
       eip712.message
     );
 
-    // 3) Decrypt
+    // 3) Decrypt (chỉ 1 ciphertext cho cả board)
     setVerifyStep("decrypt");
     const handleContractPairs = ciphertexts.map((h: string) => ({
       handle: h,
@@ -264,18 +272,18 @@ const openVerify = async (gameId: number, account: string) => {
       durationDays
     );
 
-    const plaintexts = ciphertexts.map((h: string) => {
-      const v = results[h];
-      return typeof v === "bigint" ? Number(v) : v;
-    });
+    // Lấy plaintext duy nhất và unpack thành mảng [0/1]
+    const raw = results[ciphertexts[0]];
+    const decoded = typeof raw === "bigint" ? raw : BigInt(raw);
+    const plaintexts = unpackBoard(decoded, TOTAL_TILES);
 
-    // 4) Done
+    // 4) Render HTML grid
     setVerifyStep("done");
     const gridHtml = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
-        <div style="display:grid;grid-template-columns:repeat(3,64px);gap:6px">
+        <div style="display:grid;grid-template-columns:repeat(${COLS},64px);gap:6px">
           ${plaintexts
-            .map((val: any) =>
+            .map((val: number) =>
               Number(val) === 1
                 ? '<div style="background:#c0392b;width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">💣</div>'
                 : '<div style="background:#27ae60;width:64px;height:64px;border-radius:8px"></div>'
@@ -302,7 +310,6 @@ const openVerify = async (gameId: number, account: string) => {
     setVerifyLoading(false);
   }
 };
-
 
   return (
     <div

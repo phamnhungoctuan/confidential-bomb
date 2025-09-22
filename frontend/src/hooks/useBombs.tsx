@@ -1,49 +1,72 @@
-// src/hooks/useBombs.ts
 import { ethers } from "ethers";
 import ConfidentialBombAbi from "../abi/ConfidentialBomb.json";
+import {
+  SepoliaConfig,
+} from "@zama-fhe/relayer-sdk/bundle";
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as string;
 if (!CONTRACT_ADDRESS) {
-  throw new Error("⚠️ Missing VITE_CONTRACT_ADDRESS in .env file");
+  throw new Error("Missing VITE_CONTRACT_ADDRESS in .env file");
 }
-
-// Setup SDK FHEVM
-const sdkConfig = {
-  aclContractAddress: "0x687820221192C5B662b25367F70076A37bc79b6c",
-  kmsContractAddress: "0x1364cBBf2cDF5032C47d8226a6f6FBD2AFCDacAC",
-  inputVerifierContractAddress: "0xbc91f3daD1A5F19F8390c400196e58073B6a0BC4",
-  verifyingContractAddressDecryption: "0xb6E160B1ff80D67Bfe90A85eE06Ce0A2613607D1",
-  verifyingContractAddressInputVerification: "0x7048C39f048125eDa9d678AEbaDfB22F7900a29F",
-  chainId: 11155111,
-  gatewayChainId: 55815,
-  network: "https://eth-sepolia.public.blastapi.io",
-  relayerUrl: "https://relayer.testnet.zama.cloud",
-};
 
 async function getContract() {
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
-  return new ethers.Contract(CONTRACT_ADDRESS, ConfidentialBombAbi.abi, signer);
+  return new ethers.Contract(
+    CONTRACT_ADDRESS,
+    ConfidentialBombAbi.abi,
+    signer
+  );
 }
 
-// Encrypt board in WebWorker
-async function encryptBoardInWorker(board: number[], contract: string, user: string) {
-  return new Promise<{ encryptedTiles: any[]; inputProof: string }>((resolve, reject) => {
+/**
+ * Pack a board (array of 0/1) into a single bigint bitmap.
+ * Each bit represents a tile (1 = bomb, 0 = safe).
+ * Maximum 64 tiles supported.
+ */
+function packBoard(board: number[]): bigint {
+  if (board.length > 64) throw new Error("Board too large (max 64 tiles)");
+  return board.reduce(
+    (acc, v, i) => (v === 1 ? acc | (1n << BigInt(i)) : acc),
+    0n
+  );
+}
+
+// Call to Zama relayer in a WebWorker
+async function encryptBoardInWorker(
+  packedValue: bigint,
+  contract: string,
+  user: string,
+  sdkConfig: any
+): Promise<{ encryptedBoard: any; inputProof: string }> {
+  return new Promise((resolve, reject) => {
     const worker = new Worker("/encryptWorker.js", { type: "classic" });
 
     worker.onmessage = (e) => {
       if (e.data.error) reject(e.data.error);
       else resolve(e.data);
-      worker.terminate();
+      worker.terminate(); 
     };
 
-    worker.postMessage({ board, contractAddress: contract, userAddress: user, sdkConfig });
+    worker.postMessage({
+      packedValue: packedValue.toString(), 
+      contractAddress: contract,
+      userAddress: user,
+      sdkConfig,
+    });
   });
 }
 
-/** Create new game */
+/**
+ * Create a new game.
+ * - Packs the board into a 64-bit bigint.
+ * - Encrypts the packed board via the Zama relayer.
+ * - Sends the createGame transaction to the ConfidentialBomb contract.
+ */
+
+/** Create new game (encrypt via WebWorker + Relayer) */
 export async function createGame(board: number[], seed: number) {
-  console.log("🟢 createGame...");
+  console.log("🟢 createGame start");
   await window.ethereum.request({ method: "eth_requestAccounts" });
 
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -51,52 +74,42 @@ export async function createGame(board: number[], seed: number) {
   const signerAddr = await signer.getAddress();
   const contract = await getContract();
 
-  const { encryptedTiles, inputProof } = await encryptBoardInWorker(board, CONTRACT_ADDRESS, signerAddr);
+  // 1) Pack board → bigint
+  const packed = packBoard(board);
+  console.log("📦 Packed board:", packed.toString());
 
-  const commitHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "address", "uint8"], [seed, signerAddr, board.length])
+  // 2) Encrypt trong Worker
+  console.time("⏱ worker.encrypt()");
+  const { encryptedBoard, inputProof } = await encryptBoardInWorker(
+    packed,
+    CONTRACT_ADDRESS,
+    signerAddr,
+    SepoliaConfig
   );
+  console.timeEnd("⏱ worker.encrypt()");
 
-  const tx = await contract.createGame(encryptedTiles, inputProof, commitHash, board.length);
-  return tx;
-}
+  console.log("🔒 Encrypted board handle:", encryptedBoard);
+  console.log("📜 Input proof length:", inputProof?.length || 0);
 
-/** Pick tile */
-export async function pickTile(gameId: number, index: number) {
-  console.log("🎮 pickTile", gameId, index);
-  const contract = await getContract();
-  const tx = await contract.pickTile(gameId, index);
-  await tx.wait();
-  return tx;
-}
+  // 3) Commit hash
+  const commitHash = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ["uint256", "address", "uint8"],
+      [BigInt(seed), signerAddr, board.length]
+    )
+  );
+  console.log("🔑 Commit hash:", commitHash);
 
-/** 💥 End as boom */
-export async function endAsBoom(gameId: number) {
-  const contract = await getContract();
-  const tx = await contract.endAsBoom(gameId);
-  await tx.wait();
-  return tx;
-}
+  // 4) Send tx → create game onchain
+  console.time("⏱ contract.createGame");
+  const tx = await contract.createGame(
+    encryptedBoard,
+    inputProof,
+    commitHash,
+    board.length
+  );
+  console.timeEnd("⏱ contract.createGame");
 
-/** Reveal seed */
-export async function revealSeed(gameId: number, seed: number) {
-  const contract = await getContract();
-  const tx = await contract.revealSeed(gameId, seed);
-  await tx.wait();
-  return tx;
-}
-
-/** Reveal board (optional) */
-export async function revealGame(gameId: number, board: number[]) {
-  const contract = await getContract();
-  const tx = await contract.revealGame(gameId, board);
-  await tx.wait();
-  return tx;
-}
-
-export async function endGame(gameId: number) {
-  const contract = await getContract();
-  const tx = await contract.endGame(gameId);
-  await tx.wait();
+  console.log("✅ createGame tx:", tx.hash);
   return tx;
 }
