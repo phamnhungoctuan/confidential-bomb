@@ -9,6 +9,7 @@ if (!CONTRACT_ADDRESS) {
   throw new Error("Missing VITE_CONTRACT_ADDRESS in .env file");
 }
 
+// Get contract instance
 async function getContract() {
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
@@ -57,13 +58,6 @@ async function encryptBoardInWorker(
   });
 }
 
-/**
- * Create a new game.
- * - Packs the board into a 64-bit bigint.
- * - Encrypts the packed board via the Zama relayer.
- * - Sends the createGame transaction to the ConfidentialBomb contract.
- */
-
 /** Create new game (encrypt via WebWorker + Relayer) */
 export async function createGame(board: number[], seed: number) {
   console.log("🟢 createGame start");
@@ -78,7 +72,9 @@ export async function createGame(board: number[], seed: number) {
   const packed = packBoard(board);
   console.log("📦 Packed board:", packed.toString());
 
-  // 2) Encrypt trong Worker
+  // 2) Encrypt in Worker
+  // Why WebWorker? To avoid blocking the UI thread. Please check my comment bellow.
+  // Refer: https://dev.to/lico/react-prevent-ui-blocking-from-busy-logic-using-web-workers-api-59eo
   console.time("⏱ worker.encrypt()");
   const { encryptedBoard, inputProof } = await encryptBoardInWorker(
     packed,
