@@ -36,6 +36,23 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 * Provably fair — every move is verifiable on-chain.
 ---
 
+
+## 📊 Docs & Diagrams
+
+See [README-flows.md](./README-flows.md) for:
+
+- Game flow
+- Deployment flow
+- FHEVM workflow
+
+See [README-coding.md](./README-coding.md) for:
+- Why using One Ciphertext?
+- Why `euint64`
+- Why Web Worker for Encryption?
+- Gameplay Flow
+
+---
+
 ## 🛠 Tech Stack
 
 * **Smart Contracts** — Solidity + Hardhat
@@ -237,16 +254,6 @@ Why this matters:
 * Transparency → Anyone can fetch ciphertexts.
 * No trust required → Backend only proxies contract data.
 * Provable fairness → Even if frontend is compromised, results can be verified independently.
-
----
-
-## 📊 Docs & Diagrams
-
-See [README-flows.md](./README-flows.md) for:
-
-- Game flow
-- Deployment flow
-- FHEVM workflow
 
 ---
 ## 📚 Resources
