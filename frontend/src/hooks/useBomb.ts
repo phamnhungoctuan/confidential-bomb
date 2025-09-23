@@ -93,6 +93,7 @@ export function useBomb(account: string | null) {
       setStatusMsg("⏳ Waiting for confirmation...");
 
       const receipt = await tx.wait();
+      // Parse GameCreated event to get gameId
       const iface = new ethers.Interface(ConfidentialBombAbi.abi);
       for (const log of receipt.logs) {
         try {
@@ -142,6 +143,7 @@ export function useBomb(account: string | null) {
     } else {
       const newSafe = state.safeCount + 1;
       setState({ safeCount: newSafe, boom: false });
+      // Check win condition
       if (newSafe === TOTAL_TILES - BOMB_COUNT) {
         setIsActive(false);
         setCanPick(false);

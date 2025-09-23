@@ -19,6 +19,7 @@ if (!CONTRACT_ADDRESS || !RPC_URL) {
   throw new Error("Missing CONTRACT_ADDRESS or RPC_URL in .env");
 }
 
+/// Endpoint to verify and fetch the encrypted board from the smart contract
 app.post("/verify", async (req, res) => {
   try {
     const { gameId } = req.body;

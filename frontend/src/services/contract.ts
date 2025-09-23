@@ -4,6 +4,8 @@ import {
   SepoliaConfig,
 } from "@zama-fhe/relayer-sdk/bundle";
 
+// Load contract address from .env
+// If not set, throw error immediately
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as string;
 if (!CONTRACT_ADDRESS) {
   throw new Error("Missing VITE_CONTRACT_ADDRESS in .env file");
@@ -43,12 +45,14 @@ async function encryptBoardInWorker(
   return new Promise((resolve, reject) => {
     const worker = new Worker("/encryptWorker.js", { type: "classic" });
 
+    // Listen for messages from the worker
     worker.onmessage = (e) => {
       if (e.data.error) reject(e.data.error);
       else resolve(e.data);
       worker.terminate(); 
     };
 
+    // Send data to the worker
     worker.postMessage({
       packedValue: packedValue.toString(), 
       contractAddress: contract,

@@ -1,3 +1,4 @@
+// Define custom error codes and messages for FHE operations
 export const FheErrorCode = {
   INVALID_INPUT: "INVALID_INPUT",
   ENCRYPTION_FAILED: "ENCRYPTION_FAILED",
@@ -9,8 +10,10 @@ export const FheErrorCode = {
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 
+// Type for FheErrorCode values
 export type FheErrorCode = (typeof FheErrorCode)[keyof typeof FheErrorCode];
 
+//  Map error codes to user-friendly messages
 export const getErrorMessage = (code: any): string => {
   const normalized = String(code).toUpperCase();
 
@@ -34,6 +37,7 @@ export const getErrorMessage = (code: any): string => {
     case FheErrorCode.INVALID_CIPHERTEXT:
       return "Invalid ciphertext format";
     default:
+      // For unrecognized codes, return a generic message
       return "An unknown error occurred";
   }
 };

@@ -60,6 +60,7 @@ export function useVerify(
       );
 
       setVerifyStep("sign");
+      // Request wallet signature over the EIP712 message
       const provider = new ethers.BrowserProvider(window.ethereum as any);
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
@@ -72,6 +73,9 @@ export function useVerify(
 
       // 3) Decrypt
       setVerifyStep("decrypt");
+      // Call Relayer to decrypt the ciphertexts
+      // The Relayer verifies the signature + keypair + contract ownership
+      // Then returns the plaintexts
       const results = await decryptBoard(
         ciphertexts,
         contractAddress,
@@ -83,8 +87,11 @@ export function useVerify(
         durationDays
       );
 
+      // Get the first tile's plaintext as a sample
+      // (all tiles are decrypted, we just show one for demo)
       const raw = results[ciphertexts[0]];
       const decoded = typeof raw === "bigint" ? raw : BigInt(raw);
+      // Unpack to array of 0/1
       const plaintexts = unpackBoard(decoded, totalTiles);
 
       // 4) Render HTML grid
