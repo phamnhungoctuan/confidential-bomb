@@ -22,6 +22,7 @@ function shortAddr(addr: string | null) {
 }
 
 // Pack board (array of 0/1) into a single bigint
+// Refer: README-coding.md, you can check here for details
 function unpackBoard(encoded: bigint, size: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < size; i++) {

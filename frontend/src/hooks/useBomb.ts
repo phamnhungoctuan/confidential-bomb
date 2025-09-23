@@ -27,13 +27,13 @@ export function useBomb(account: string | null) {
   const [proofJson, setProofJson] = useState<any | null>(null);
   const [statusMsg, setStatusMsg] = useState("");
 
-  // ⏳ Loading steps
+  // Loading steps
   const [loadingStep, setLoadingStep] = useState<
     "" | "encrypt" | "confirm" | "onchain"
   >("");
   const [progress, setProgress] = useState(0);
 
-  // 🎲 Generate board
+  // Generate board
   const generateBoard = () => {
     const out: number[][] = Array.from({ length: ROWS }, () =>
       Array(COLS).fill(0)
