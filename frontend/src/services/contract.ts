@@ -84,8 +84,8 @@ export async function createGame(board: number[], seed: number) {
   );
   console.timeEnd("⏱ worker.encrypt()");
 
-  console.log("🔒 Encrypted board handle:", encryptedBoard);
-  console.log("📜 Input proof length:", inputProof?.length || 0);
+  console.log("Encrypted board handle:", encryptedBoard);
+  console.log("Input proof length:", inputProof?.length || 0);
 
   // 3) Commit hash
   const commitHash = ethers.keccak256(
@@ -94,7 +94,7 @@ export async function createGame(board: number[], seed: number) {
       [BigInt(seed), signerAddr, board.length]
     )
   );
-  console.log("🔑 Commit hash:", commitHash);
+  console.log("Commit hash:", commitHash);
 
   // 4) Send tx → create game onchain
   console.time("⏱ contract.createGame");

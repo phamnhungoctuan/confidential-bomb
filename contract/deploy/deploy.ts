@@ -15,5 +15,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default func;
 
-func.id = "deploy_ConfidentialBomb"; // để tránh chạy lại nhiều lần
+func.id = "deploy_ConfidentialBomb"; // avoid running twice
 func.tags = ["ConfidentialBomb"];

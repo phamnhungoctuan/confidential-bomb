@@ -21,7 +21,7 @@ export async function getRelayerInstance() {
 /**
  * Build an EIP712 message for user signing.
  * - The Relayer SDK generates the EIP712 typed data structure.
- * - The wallet (e.g. MetaMask) will sign this to authorize decryption.
+ * - The wallet will sign this to authorize decryption.
  *
  * @param instance Relayer instance
  * @param publicKey User's generated FHE public key
