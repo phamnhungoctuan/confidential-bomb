@@ -11,10 +11,7 @@ import "solidity-coverage";
 import "./tasks/accounts";
 import "./tasks/copy";
 
-// Run 'npx hardhat vars setup' to see the list of variables that need to be set
 const PRIVATE_KEY: string = vars.get("PRIVATE_KEY", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
-const MNEMONIC: string = vars.get("MNEMONIC", "test test test test test test test test test test test junk");
-const INFURA_API_KEY: string = vars.get("INFURA_API_KEY", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -32,12 +29,6 @@ const config: HardhatUserConfig = {
     excludeContracts: [],
   },
   networks: {
-    hardhat: {
-      accounts: {
-        mnemonic: MNEMONIC,
-      },
-      chainId: 31337,
-    },
     sepolia: {
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
       chainId: 11155111,

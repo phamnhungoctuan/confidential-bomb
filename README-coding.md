@@ -3,20 +3,25 @@
 * The board is packed into a **64-bit bitmap** → only **1 ciphertext** stored on-chain.
 * Gas efficient, simpler verification, less storage.
 
+---
+
 ### Why `euint64`?
 
-Refer: `contract/contracts/ConfidentialBomb.sol`
+Refer: `contracts/ConfidentialBomb.sol`
 
 * Each bit = one tile (bomb or safe).
 * Fits perfectly in **64 tiles max**.
 * Uses `euint64` type in FHEVM for efficient encrypted computation.
 
+---
+
 ### Why Web Worker for Encryption?
 
 * FHE encryption is CPU-heavy.
-* Done in a **Web Worker** to keep the UI responsive (progress bars, animations).
-* Main thread stays free for React rendering.
+* Done in a **Web Worker** to keep the UI smooth.
+* Main thread stays free for React rendering, progress bars, animations.
 
+---
 
 ## Gameplay Flow
 
@@ -39,8 +44,8 @@ Refer: `contract/contracts/ConfidentialBomb.sol`
 
 4. **Verify**
 
-   * Anyone fetches ciphertext via backend.
-   * Decrypts with SDK → confirms fairness vs commit hash.
+   * Anyone fetches ciphertext directly from the contract.
+   * Frontend + Relayer SDK decrypt → confirm fairness vs commit hash.
 
 ---
 
@@ -83,7 +88,7 @@ self.onmessage = async (e) => {
     buf.add64(BigInt(packedValue)); // pack board into euint64
     const result = await buf.encrypt();
 
-    // Send ciphertext + inputProof back
+    // Send ciphertext + proof back
     self.postMessage({
       encryptedBoard: result.handles[0],
       inputProof: result.inputProof,
@@ -147,5 +152,7 @@ graph TD;
     H -->|All safe cleared| I[🏆 Win]
     G --> J[Verify possible]
     I --> J
-    J --> K[Fetch ciphertext → Decrypt → Confirm commitHash]
+    J --> K[Fetch ciphertext from contract]
+    K --> L[Decrypt with Relayer SDK in frontend]
+    L --> M[Confirm matches commitHash → ✅ Provably Fair]
 ```

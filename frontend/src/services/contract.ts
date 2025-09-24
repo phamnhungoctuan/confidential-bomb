@@ -87,7 +87,6 @@ export async function createGame(walletProvider: Provider, board: number[], seed
   );
   console.timeEnd("⏱ worker.encrypt()");
 
-  console.log("Encrypted board handle:", encryptedBoard);
   console.log("Input proof length:", inputProof?.length || 0);
 
   // 3) Commit hash
