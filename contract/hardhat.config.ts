@@ -32,6 +32,11 @@ const config: HardhatUserConfig = {
     excludeContracts: [],
   },
   networks: {
+    zamaTestnet: {
+      url: "https://rpc.testnet.zama.cloud", // replace this endpoint when needed,
+      chainId: 55815, // replace this chain ID
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
     hardhat: {
       accounts: {
         mnemonic: MNEMONIC,
