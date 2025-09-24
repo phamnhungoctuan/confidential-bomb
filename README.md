@@ -1,4 +1,4 @@
-# 💣 Confidential Bomb
+# 💣 Confidential Bomb 💣
 
 A **beginner-friendly blockchain mini-game** powered by [Zama’s FHEVM](https://zama.ai).
 Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game is fair**.
@@ -35,9 +35,9 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 3. **Continue** until you hit a bomb or open all safe tiles.
 4. **Verify fairness** → frontend fetches ciphertext and uses Zama Relayer to decrypt + prove it matches.
 
-✔ **Simple gameplay** — pick safe tiles, avoid bombs.
-✔ **Encrypted board** — bombs hidden using FHE.
-✔ **Provably fair** — anyone can verify the board.
+🎮 **Simple gameplay** — pick safe tiles, avoid bombs.  
+🔒 **Encrypted board** — bombs hidden using FHE.  
+✅ **Provably fair** — anyone can verify the board.  
 
 ---
 
@@ -46,7 +46,7 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 * **Smart Contracts** → Solidity + Hardhat
 * **Frontend** → React + TypeScript + Ethers.js
 * **Encryption** → [FHEVM SDK](https://docs.zama.ai/fhevm)
-* **Wallet** → MetaMask
+* **Wallet** → EVM Wallet
 * **Network** → Ethereum Sepolia
 
 ---
@@ -61,7 +61,7 @@ cd contract
 npm install
 ```
 
-Set your private key (from MetaMask):
+Set your private key (from EVM Wallet):
 
 ```bash
 npx hardhat vars set PRIVATE_KEY
@@ -91,9 +91,13 @@ npm install
 npm run dev
 ```
 
-Open: [http://localhost:5174](http://localhost:5174)
+Open: [http://localhost:5173](http://localhost:5173)
 
 🎮 Now you can play the game and click **Verify Fairness** to see proof.
+
+<p align="center">  
+  <img src="./verify.png" alt="Game Screenshot" width="280"/>  
+</p>  
 
 ---
 
