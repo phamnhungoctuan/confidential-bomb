@@ -3,6 +3,8 @@ import { useState } from "react";
 import { ethers } from "ethers";
 import { getRelayerInstance, buildEIP712, decryptBoard } from "../services/relayer";
 import { verifyGame } from "../services/verify";
+import { useAppKitProvider } from "@reown/appkit/react";
+import type { Provider } from "@reown/appkit/react";
 
 // Short address helper
 function shortAddr(addr: string) {
@@ -20,6 +22,8 @@ export function useVerify(
   const [verifyStep, setVerifyStep] = useState<
     "" | "fetch" | "sign" | "decrypt" | "done"
   >("");
+
+  const { walletProvider } = useAppKitProvider<Provider>("eip155");
 
   const openVerify = async (
     gameId: number,
@@ -55,7 +59,9 @@ export function useVerify(
 
       setVerifyStep("sign");
 
-      const browserProvider = new ethers.BrowserProvider(window.ethereum as any);
+      if (!walletProvider) throw new Error("No wallet provider found");
+
+      const browserProvider = new ethers.BrowserProvider(walletProvider as any);
       const signer = await browserProvider.getSigner();
       const signerAddress = await signer.getAddress();
 
