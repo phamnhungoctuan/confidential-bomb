@@ -110,6 +110,10 @@ See [README-coding.md](./README-coding.md) for:
 
 👉 Copy contract address into `.env` files for frontend & backend.
 
+6. Deploy to Zama Testnet (public testnet is paused):
+
+   See [README-zama-testnet.md](./README-zama-testnet.md)
+
 ---
 
 ### Frontend
