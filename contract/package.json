@@ -83,7 +83,7 @@
     "build:ts": "tsc --project tsconfig.json",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "build:test": "npx hardhat clean && npx hardhat compile && npx hardhat test",
-    "deploy": "npx hardhat run scripts/deploy.js --network sepolia"
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia"
   },
   "overrides": {
     "ws@>=7.0.0 <7.5.10": ">=7.5.10",

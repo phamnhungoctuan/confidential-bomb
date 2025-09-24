@@ -35,7 +35,7 @@
 5. Deploy to Sepolia:
 
    ```bash
-   npm run deploy
+   npm run deploy:sepolia
    ```
 
    ```

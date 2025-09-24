@@ -75,7 +75,7 @@ npm run build:test
 Deploy to Sepolia:
 
 ```bash
-npm run deploy
+npm run deploy:sepolia
 ```
 
 👉 After deploy, the script will **auto-update** `frontend/.env` with the new contract address.
@@ -97,6 +97,24 @@ Open: [http://localhost:5173](http://localhost:5173)
 <p align="center">  
   <img src="./verify.png" alt="Game Screenshot" width="280"/>  
 </p>  
+
+## 🕹 Game Flow
+
+```mermaid
+graph TD;
+    A[Start Game] --> B[Contract Generates Encrypted Board]
+    B --> C[Player Picks Tile]
+    C -->|Safe| D[Continue Playing]
+    C -->|Bomb| E[💥 Game Over]
+    D --> F{Tiles Left?}
+    F -->|Yes| C
+    F -->|No| G[🎉 You Win]
+    E --> H[Verify Fairness]
+    G --> H
+    H --> I[Decrypt Board + Compare With Commitment]
+    I --> J[✅ Proof of Fairness]
+```
+
 
 ---
 
