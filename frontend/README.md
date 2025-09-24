@@ -4,7 +4,6 @@
 1. Install dependencies:
 
    ```bash
-   git clone https://github.com/phamnhungoctuan/confidential-bomb
    cd frontend
    npm install
    ```

@@ -56,7 +56,6 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 ### Step 1: Setup & Deploy Contract
 
 ```bash
-git clone https://github.com/phamnhungoctuan/confidential-bomb
 cd contract
 npm install
 ```
