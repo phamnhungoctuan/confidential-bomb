@@ -16,15 +16,13 @@
 3. Compile & test:
 
    ```bash
-   npx hardhat clean && npx hardhat compile
-   npx hardhat test
+      npm run build:test
    ```
 
    Example output:
 
    ```
    ✅ ABI copied to frontend/src/abi/ConfidentialBomb.json
-   ✅ ABI copied to backend/ConfidentialBomb.json
    ```
 
 4. Deploy locally:
@@ -37,15 +35,13 @@
 5. Deploy to Sepolia:
 
    ```bash
-   npx hardhat deploy --network sepolia
+   npm run deploy
    ```
 
    ```
    ✅ ConfidentialBomb deployed at: 0x65029caA609A1E51F72B8B72c79318f3832255fd
    ```
-
-👉 **Note:** Copy the deployed contract address (e.g. `0xF3c0...`) and update both frontend & backend `.env`.
-
+👉 After deploy, the script will **auto-update** `frontend/.env` with the new contract address.
 
 ## 🛠 Tech Stack
 

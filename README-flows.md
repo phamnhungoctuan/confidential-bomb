@@ -99,13 +99,13 @@ sequenceDiagram
 
 ## 🔐 Frontend Verification Flow
 
-For beginners: the 3-step process to verify fairness.
+the 3-step process to verify fairness.
 
 ```mermaid
 graph TD;
     A[User clicks 'Verify'] --> B[Fetch ciphertext from Contract]
-    B --> C[User signs EIP-712 message<br/>(authorize decryption)]
-    C --> D[Relayer SDK decrypts ciphertext<br/>using user keypair + signature]
+    B --> C[User signs EIP-712 message\n(authorize decryption)]
+    C --> D[Relayer SDK decrypts ciphertext\nusing user keypair + signature]
     D --> E[Plaintext board shown in UI]
     E --> F[✅ Verified Fairness]
 ```
