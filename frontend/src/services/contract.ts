@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import ConfidentialBombAbi from "../abi/ConfidentialBomb.json";
+import type { Provider } from "@reown/appkit/react";
 import {
   SepoliaConfig,
 } from "@zama-fhe/relayer-sdk/bundle";
@@ -12,8 +13,8 @@ if (!CONTRACT_ADDRESS) {
 }
 
 // Get contract instance
-async function getContract() {
-  const provider = new ethers.BrowserProvider(window.ethereum);
+async function getContract(walletProvider: Provider) {
+  const provider = new ethers.BrowserProvider(walletProvider as any);
   const signer = await provider.getSigner();
   return new ethers.Contract(
     CONTRACT_ADDRESS,
@@ -63,14 +64,12 @@ async function encryptBoardInWorker(
 }
 
 /** Create new game (encrypt via WebWorker + Relayer) */
-export async function createGame(board: number[], seed: number) {
+export async function createGame(walletProvider: Provider, board: number[], seed: number) {
   console.log("🟢 createGame start");
-  await window.ethereum.request({ method: "eth_requestAccounts" });
-
-  const provider = new ethers.BrowserProvider(window.ethereum);
+  const provider = new ethers.BrowserProvider(walletProvider as any);
   const signer = await provider.getSigner();
   const signerAddr = await signer.getAddress();
-  const contract = await getContract();
+  const contract = await getContract(walletProvider);
 
   // 1) Pack board → bigint
   const packed = packBoard(board);

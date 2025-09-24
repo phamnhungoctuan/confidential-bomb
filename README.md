@@ -3,17 +3,8 @@
 A **beginner-friendly blockchain mini-game** powered by [Zama’s FHEVM](https://zama.ai).
 Inspired by Minesweeper — **pick safe tiles, dodge bombs, and prove the game is fair**.
 
-> 📝 **Hello FHEVM Tutorial**
-> This project is designed as the easiest way to learn and build with **FHEVM**.
-> By following this guide, you will:
->
-> * Set up a full FHEVM dev environment (Hardhat + frontend + backend).
-> * Deploy and interact with your **first confidential smart contract**.
-> * Learn the complete flow: **encryption → computation → decryption → verification**.
-> * Get inspired to build more advanced confidential dApps.
-> * This tutorial assumes zero cryptography background, you’ll just follow a familiar dApp workflow.
-
 Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gaming.
+You don’t need cryptography knowledge — if you know how to run a dApp, you can follow along.
 
 <p align="center">  
   <img src="./bomb.png" alt="Game Screenshot" width="280"/>  
@@ -21,259 +12,132 @@ Think of **Confidential Bomb** as the *“Hello World”* for private Web3 gamin
 
 ---
 
-## 🌐 Demo
+## 🎯 What You Will Learn
 
-* Play → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
-* Verify API → [confidential-bomb-verify.vercel.app](https://confidential-bomb-verify.vercel.app/api/verify)
-* Contract → [Sepolia Explorer](https://sepolia.etherscan.io/address/0x65029caA609A1E51F72B8B72c79318f3832255fd)
-
----
-
-## ✨ Introduction my game
-
-* Simple gameplay — choose tiles, avoid bombs.
-* Encrypted boards — bomb positions hidden with **Fully Homomorphic Encryption (FHE)**.
-* Provably fair — every move is verifiable on-chain.
----
-
-
-## 📊 Docs & Diagrams
-
-See [README-flows.md](./README-flows.md) for:
-
-- Game flow
-- Deployment flow
-- FHEVM workflow
-
-See [README-coding.md](./README-coding.md) for:
-- Why using One Ciphertext?
-- Why `euint64`
-- Why Web Worker for Encryption?
-- Gameplay Flow
+* How to set up a **FHEVM dev environment** (Hardhat + frontend)
+* How to deploy your **first confidential smart contract**
+* How to interact with an **encrypted board on-chain**
+* How to **verify that the game is provably fair** (directly in the frontend)
 
 ---
 
-## 🛠 Tech Stack
+## 🌐 Try It First
+
+* 🎮 Play → [confidential-bomb.vercel.app](https://confidential-bomb.vercel.app/)
+* 📜 Contract → [Sepolia Explorer](https://sepolia.etherscan.io/address/0x65029caA609A1E51F72B8B72c79318f3832255fd)
+
+---
+
+## ✨ How the Game Works
+
+1. Start a new game → the contract generates an **encrypted board** (bombs hidden with FHE).
+2. Pick tiles → contract checks if it’s safe or a bomb.
+3. Keep going until you hit a bomb or open all safe tiles.
+4. Verify fairness → the frontend fetches the encrypted board and uses Zama Relayer to decrypt + prove it matches the commitment.
+
+* **Simple gameplay** — pick safe tiles, avoid bombs.
+* **Encrypted board** — bomb positions hidden with Fully Homomorphic Encryption.
+* **Provably fair** — moves are verifiable on-chain.
+---
+
+## 🛠 Tools You’ll Use
 
 * **Smart Contracts** — Solidity + Hardhat
 * **Frontend** — React + TypeScript + Ethers.js
-* **Encryption/Decryption** — [FHEVM SDK](https://docs.zama.ai/fhevm)
-* **Wallet** — EVM MetaMask
+* **Encryption** — [FHEVM SDK](https://docs.zama.ai/fhevm)
+* **Wallet** — MetaMask
 * **Network** — Ethereum Sepolia
 
 ---
 
 ## 🚀 Getting Started
 
-### Contracts
+### Step 1: Contracts
 
-1. Clone & install:
+```bash
+git clone https://github.com/phamnhungoctuan/confidential-bomb
+cd contract
+npm install
+```
 
-   ```bash
-   git clone https://github.com/phamnhungoctuan/confidential-bomb
-   cd contract
-   npm install
-   ```
+Set private key:
 
-2. Set private key:
+```bash
+npx hardhat vars set PRIVATE_KEY
+```
 
-   ```bash
-   npx hardhat vars set PRIVATE_KEY
-   ```
+Compile & test:
 
-3. Compile & test:
+```bash
+npx hardhat clean && npx hardhat compile
+npx hardhat test
+```
 
-   ```bash
-   npx hardhat clean && npx hardhat compile
-   npx hardhat test
-   ```
+➡ ABI will auto-copy to `frontend/src/abi/`.
 
-   Output includes ABI auto-copied to frontend & backend:
+Run locally:
 
-   ```
-   ABI copied to frontend/src/abi/ConfidentialBomb.json
-   ABI copied to backend/ConfidentialBomb.json
-   ```
+```bash
+npx hardhat node
+npx hardhat deploy --network localhost
+```
 
-4. Deploy locally:
+Deploy to Sepolia:
 
-   ```bash
-   npx hardhat node
-   npx hardhat deploy --network localhost
-   ```
+```bash
+npx hardhat deploy --network sepolia
+```
 
-5. Deploy to Sepolia:
-
-   ```bash
-   npx hardhat deploy --network sepolia
-   ```
-
-👉 Copy contract address into `.env` files for frontend & backend.
-
-6. Deploy to Zama Testnet (public testnet is paused):
-
-   See [README-zama-testnet.md](./README-zama-testnet.md)
+👉 Copy contract address into `.env` for frontend.
 
 ---
 
-### Frontend
+### Step 2: Frontend
 
-1. Install deps:
+```bash
+cd frontend
+npm install
+```
 
-   ```bash
-   cd frontend
-   npm install
-   ```
+Add `.env`:
 
-2. Add env vars (`.env`):
+```
+VITE_CONTRACT_ADDRESS=0xYourNewContract
+```
 
-   ```
-   VITE_CONTRACT_ADDRESS=0xYourNewContract
-   VITE_VERIFY_SERVER=http://localhost:3001/verify
-   ```
+Run:
 
-3. Run dev server:
+```bash
+npm run dev
+```
 
-   ```bash
-   npm run dev
-   ```
+Open: [http://localhost:5174](http://localhost:5174)
 
-   Open: [http://localhost:5174/](http://localhost:5174/)
+📘 Want to learn step by step? → [See Beginner Tutorial](./README-tutorial.md)
 
 ---
 
-### Verify Backend
+## 📊 Learn More
 
-1. Install deps:
-
-   ```bash
-   cd backend
-   npm install
-   ```
-
-2. Add env vars (`.env`):
-
-   ```
-   CONTRACT_ADDRESS=0xYourNewContract
-   RPC_URL=https://eth-sepolia.public.blastapi.io
-   PORT=3001
-   ```
-
-3. Start server:
-
-   ```bash
-   node index.mjs
-   ```
-
----
-
-## FHEVM in Confidential Bomb
-
-In this design, the **entire board is packed into a single ciphertext**.
-Each bit represents a tile:
-
-* `1` = bomb
-* `0` = safe
-
-Only **1 ciphertext per board** is stored on-chain.
-
-```ts
-// Pack board into 64-bit bitmap
-function packBoard(board: number[]): bigint {
-  return board.reduce(
-    (acc, v, i) => (v === 1 ? acc | (1n << BigInt(i)) : acc),
-    0n
-  );
-}
-
-// Encrypt once with relayer
-// Refer: https://docs.zama.ai/protocol/relayer-sdk-guides/fhevm-relayer/input
-const buf = fhevm.createEncryptedInput(contractAddr, userAddr);
-buf.add64(packedBoard);
-const result = await buf.encrypt();
-```
-
-When picking a tile, the contract shifts & masks bits inside the encrypted board:
-
-```solidity
-euint64 shifted = FHE.shr(encryptedBoard, index);
-euint64 bitVal  = FHE.and(shifted, FHE.asEuint64(1));
-bytes memory isBombCipher = abi.encode(FHE.eq(bitVal, FHE.asEuint64(1)));
-```
-
-And to verify decrypted results:
-
-```
-// Decrypt ciphertexts (handles) from contract
-// Refer document**: https://docs.zama.ai/protocol/relayer-sdk-guides/fhevm-relayer/decryption/user-decryption
-const results = await instance.userDecrypt(
-  handleContractPairs,    // encrypted handles from /verify
-  keypair.privateKey,     // user private key
-  keypair.publicKey,      // user public key
-  signature,              // signed authorization
-  contractAddresses,      // target contract(s)
-  signerAddress,          // address of the signer
-  startTimeStamp,         // validity start
-  durationDays            // validity duration
-);
-```
----
-
-## Verification Mechanism
-
-Confidential Bomb includes a **Verify Backend** (`backend/index.mjs`) so anyone can independently check game data against the contract.
-
-1. Each board is stored as **1 ciphertext handle** on-chain.
-2. `/verify` endpoint returns the handle for a given `gameId`.
-3. A verifier can:
-
-   * Fetch the ciphertext.
-   * Run decryption with FHEVM SDK.
-   * Confirm results match the commitment.
-
-Example:
-
-```http
-POST http://localhost:3001/verify
-Content-Type: application/json
-
-{ "gameId": 1 }
-```
-
-Response:
-
-```json
-{
-  "ciphertexts": ["0x0ad8..."],
-  "contractAddress": "0xYourNewContract"
-}
-```
-
-<p align="center">  
-  <img src="./verify.png" width="280"/>  
-</p>  
-
-Why this matters:
-
-* Transparency → Anyone can fetch ciphertexts.
-* No trust required → Backend only proxies contract data.
-* Provable fairness → Even if frontend is compromised, results can be verified independently.
-
----
-## 📚 Resources
-
-* [FHEVM Docs](https://docs.zama.ai/fhevm)
-* [Zama Discord](https://discord.gg/zama)
+* [README-flows.md](./README-flows.md): game flow, deployment flow, FHEVM workflow
+* [README-coding.md](./README-coding.md): one ciphertext design, why `euint64`, why use a Web Worker
+* [README-FHEVM.md](./README-FHEVM.md): background on FHEVM
 
 ---
 
 ## ⚠️ Troubleshooting
 
-* MetaMask won’t connect → switch to Sepolia testnet
-* RPC errors → try Alchemy/Infura instead of public RPC
-* Frontend mismatch → check `.env` contract address
-* Verify fails → backend `.env` contract mismatch
-* Tx stuck → increase gas or get more test ETH
+* ❌ MetaMask won’t connect → switch to Sepolia testnet
+* ❌ RPC error → use Alchemy/Infura instead of public RPC
+* ❌ Verify fails → check `.env` contract address matches deployment
+* ❌ Tx stuck → add gas or get more test ETH
+
+---
+
+## 📚 Resources
+
+* [FHEVM Docs](https://docs.zama.ai/fhevm)
+* [Zama Discord](https://discord.gg/zama)
 
 ---
 

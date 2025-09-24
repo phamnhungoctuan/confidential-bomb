@@ -1,13 +1,9 @@
 // App.tsx
-import { useState, useEffect } from "react";
 import { useBomb } from "./hooks/useBomb";
 import { useVerify } from "./hooks/useVerify";
 import { Board } from "./components/Board";
 import { VerifyModal } from "./components/VerifyModal";
-
-const VERIFY_SERVER =
-  import.meta.env.VITE_VERIFY_SERVER ||
-  "https://confidential-bomb-verify.vercel.app/api/verify";
+import { useWallet } from "./services/wallet";
 
 // Game config
 const ROWS = 3;
@@ -32,8 +28,7 @@ function unpackBoard(encoded: bigint, size: number): number[] {
 }
 
 export default function App() {
-  const [account, setAccount] = useState<string | null>(null);
-
+  const { address, isConnected, connectWallet, disconnectWallet } = useWallet();
   const {
     gameId,
     board,
@@ -48,7 +43,7 @@ export default function App() {
     pickTile,
     loadingStep,
     progress,
-  } = useBomb(account);
+  } = useBomb(address);
 
   const {
     showVerifyModal,
@@ -57,31 +52,7 @@ export default function App() {
     verifyHtml,
     verifyStep,
     openVerify,
-  } = useVerify(VERIFY_SERVER, unpackBoard);
-
-  useEffect(() => {
-    (async () => {
-      if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({
-            method: "eth_accounts",
-          });
-          if (accounts?.length > 0) setAccount(accounts[0]);
-        } catch {}
-      }
-    })();
-  }, []);
-
-  // Connect wallet handler
-  const connectWallet = async () => {
-    if (!window.ethereum) return alert("⚠️ MetaMask not detected");
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    if (accounts?.length > 0) setAccount(accounts[0]);
-  };
-
-  const disconnectWallet = () => setAccount(null);
+  } = useVerify(unpackBoard);
 
   return (
     <div
@@ -96,14 +67,15 @@ export default function App() {
         <h1 style={{ fontSize: 42, margin: "12px 0" }}>💣 Confidential Bomb 💣</h1>
 
         <div style={{ marginTop: 16 }}>
-          {!account ? (
-            <button onClick={connectWallet}>🦊 Connect Wallet</button>
+         {isConnected ? (
+            <>
+              <p>✅ Connected: {shortAddr(address!)}</p>
+              <button onClick={disconnectWallet}>Disconnect</button>
+            </>
           ) : (
-            <button onClick={disconnectWallet}>
-              {shortAddr(account)} (Disconnect)
-            </button>
+            <button onClick={connectWallet}>Connect Wallet</button>
           )}
-          {!isActive && !proofJson && (
+          {isConnected && !isActive && !proofJson && (
             <button onClick={startGame} style={{ marginLeft: 12 }}>
               ⚡ Start Game
             </button>
@@ -144,7 +116,7 @@ export default function App() {
             <button onClick={startGame}>🔄 New Game</button>
             <button
               onClick={() =>
-                account && openVerify(gameId, account, TOTAL_TILES, COLS)
+                address && openVerify(gameId, address, TOTAL_TILES, COLS)
               }
               style={{ marginLeft: 12 }}
             >

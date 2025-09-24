@@ -1,11 +1,17 @@
+# 📊 Flows & Diagrams — Confidential Bomb
+
+This document explains the key flows and architecture behind **Confidential Bomb**.
+It is designed for **beginners**, with simple diagrams showing how FHEVM works in practice.
+
+---
+
 ## 🐣 Beginner Onboarding Flow
 
-Refer: https://docs.zama.ai/protocol/protocol/overview
+Refer: [Zama Protocol Overview](https://docs.zama.ai/protocol/protocol/overview)
 
 <p align="center">  
-  <img src="./image.png"/>  
+  <img src="./image.png" width="380"/>  
 </p>  
-
 
 ```mermaid
 graph TD;
@@ -19,20 +25,19 @@ graph TD;
 ```
 
 **Explanation:**
-This flow is designed for developers who have *no prior knowledge of FHE or cryptography*. You just follow the same steps you already know from building on Ethereum — but add a simple “encrypt before sending” and “decrypt after receiving.” The SDK handles the heavy math, so you can focus entirely on writing and running your dApp.
+Developers don’t need prior cryptography knowledge.
+You just:
 
-# 📊 Flows & Diagrams
-
-This document provides visual diagrams that explain the key flows in **Confidential Bomb (1 ciphertext/board mode)**:
-
-* Gameplay logic (for players)
-* Deployment steps (for developers)
-* FHEVM workflow (encryption → computation → decryption → verification)
-* Verification backend workflow
+* Write contracts like on Ethereum.
+* Encrypt inputs before sending.
+* Decrypt outputs after receiving.
+  The SDK handles all math.
 
 ---
 
 ## 🎲 Game Flow
+
+This shows the logic of playing **Confidential Bomb** (1 ciphertext per board).
 
 ```mermaid
 graph TD;
@@ -47,8 +52,8 @@ graph TD;
     I -->|All Safe Tiles Cleared| J[You Win]
     H --> K[Verification Possible]
     J --> K
-    K --> L[Verifier Fetches Ciphertext via Backend /verify]
-    L --> M[Decrypt & Confirm Commitment]
+    K --> L[Fetch Ciphertext from Contract]
+    L --> M[Decrypt via Relayer SDK + User Signature]
     M --> N[Provably Fair]
 ```
 
@@ -56,25 +61,26 @@ graph TD;
 
 ## 📌 Deployment Flow
 
+How developers deploy and connect frontend:
+
 ```mermaid
 graph TD;
     A[Deploy Contract] --> B[Copy Deployed Address]
     B --> C[Update .env Frontend]
-    B --> D[Update .env Backend]
-    C --> E[Run npm run dev]
-    D --> F[Run node index.mjs]
+    C --> D[Run npm run dev]
 ```
 
 ---
 
 ## 🔄 FHEVM Workflow
 
+This is the generic **encryption → computation → decryption → verification** lifecycle.
+
 ```mermaid
 sequenceDiagram
     participant User as User (Browser)
     participant Relayer as Relayer SDK
     participant Contract as Smart Contract (Sepolia)
-    participant Backend as Verify Backend
 
     User->>Relayer: Pack board → buf.add64(bitmap)
     Relayer->>Relayer: buf.encrypt() → encryptedBoard + proof
@@ -83,28 +89,39 @@ sequenceDiagram
     User->>Contract: pickTile(index)
     Contract->>Contract: Shift & mask encryptedBoard
     Contract->>Contract: Emit encrypted isBombCiphertext
-    User->>Backend: POST /verify { gameId }
-    Backend->>Contract: getEncryptedBoard(gameId)
-    Contract-->>Backend: Single ciphertext handle
-    Backend-->>User: { ciphertext, contractAddress }
+    User->>Contract: getEncryptedBoard(gameId)
+    Contract-->>User: Ciphertext handle
     User->>Relayer: userDecrypt(handle, keypair, signature)
     Relayer-->>User: Plaintext board for verification
 ```
 
 ---
 
-## 🧐 Verification Backend Workflow
+## 🔐 Frontend Verification Flow
+
+For beginners: the 3-step process to verify fairness.
 
 ```mermaid
-sequenceDiagram
-    participant Verifier as Verifier (Client / Auditor)
-    participant Backend as Verify Backend (Express.js)
-    participant Contract as ConfidentialBomb Contract
-
-    Verifier->>Backend: POST /verify { gameId }
-    Backend->>Contract: getEncryptedBoard(gameId)
-    Contract-->>Backend: Single ciphertext handle
-    Backend-->>Verifier: { ciphertext, contractAddress }
-    Verifier->>Verifier: Run FHEVM SDK userDecrypt()
-    Verifier-->>Verifier: Confirm commitment matches
+graph TD;
+    A[User clicks 'Verify'] --> B[Fetch ciphertext from Contract]
+    B --> C[User signs EIP-712 message<br/>(authorize decryption)]
+    C --> D[Relayer SDK decrypts ciphertext<br/>using user keypair + signature]
+    D --> E[Plaintext board shown in UI]
+    E --> F[✅ Verified Fairness]
 ```
+
+**Step-by-step:**
+
+1. **Fetch** → Frontend calls `getEncryptedBoard(gameId)` from contract.
+2. **Sign** → User signs EIP-712 message to authorize decryption.
+3. **Decrypt** → Relayer SDK decrypts and returns plaintext board.
+4. **Verify** → Plaintext board matches commitment → provably fair.
+
+---
+
+## ✅ Summary
+
+* **Game Flow** → how players interact.
+* **Deployment Flow** → how devs deploy & connect frontend.
+* **FHEVM Workflow** → how encryption/decryption works end-to-end.
+* **Frontend Verification Flow** → how fairness is proven without a backend.

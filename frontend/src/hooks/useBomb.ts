@@ -4,6 +4,8 @@ import { ethers } from "ethers";
 import { createGame } from "../services/contract";
 import ConfidentialBombAbi from "../abi/ConfidentialBomb.json";
 import { getErrorMessage } from "../errors";
+import { useAppKitProvider } from "@reown/appkit/react";
+import type { Provider } from "@reown/appkit/react";
 
 // Game config
 const ROWS = 3;
@@ -13,6 +15,8 @@ const BOMB_COUNT = 2;
 
 // Hook to manage game state and logic
 export function useBomb(account: string | null) {
+  const { walletProvider } = useAppKitProvider<Provider>("eip155");
+
   const [gameId, setGameId] = useState<number | null>(null);
   const [board, setBoard] = useState<number[][]>([]);
   const [seed, setSeed] = useState<number>(0);
@@ -83,7 +87,7 @@ export function useBomb(account: string | null) {
     }, 200);
 
     try {
-      const tx = await createGame(newBoard.flat(), newSeed);
+      const tx = await createGame(walletProvider, newBoard.flat(), newSeed);
       clearInterval(timer);
 
       setLoadingStep("confirm");

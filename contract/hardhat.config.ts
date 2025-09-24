@@ -32,25 +32,11 @@ const config: HardhatUserConfig = {
     excludeContracts: [],
   },
   networks: {
-    zamaTestnet: {
-      url: "https://rpc.testnet.zama.cloud", // replace this endpoint when needed,
-      chainId: 55815, // replace this chain ID
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
-    },
     hardhat: {
       accounts: {
         mnemonic: MNEMONIC,
       },
       chainId: 31337,
-    },
-    anvil: {
-      accounts: {
-        mnemonic: MNEMONIC,
-        path: "m/44'/60'/0'/0/",
-        count: 10,
-      },
-      chainId: 31337,
-      url: "http://localhost:8545",
     },
     sepolia: {
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
