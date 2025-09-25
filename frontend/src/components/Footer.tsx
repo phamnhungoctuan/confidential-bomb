@@ -29,6 +29,17 @@ export function Footer() {
       >
         🐙 github.com/phamnhungoctuan
       </a>
+
+      <p
+          style={{
+            marginTop: 20,
+            fontSize: 13,
+            color: "#e67e22",
+            fontStyle: "italic",
+          }}
+        >
+          ⚠️ This game runs on the <strong>Sepolia test network</strong> and is for demo purposes only.  
+      </p>
     </footer>
   );
 }

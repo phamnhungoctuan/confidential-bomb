@@ -4,11 +4,10 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   define: {
-    global: "globalThis", // ⚡ FIX cho @fhevm/sdk
+    global: "globalThis",
   },
   resolve: {
     alias: {
-      // nếu cần polyfill Buffer (nếu SDK yêu cầu)
       buffer: "buffer",
     },
   },

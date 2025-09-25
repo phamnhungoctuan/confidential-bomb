@@ -46,6 +46,15 @@ export default function App() {
     progress,
   } = useBomb(address);
 
+  const isWin = state && !state.boom && state.safeCount === TOTAL_TILES - BOMB_COUNT;
+  const isLose = state && state.boom;
+
+  const resultText = isWin
+    ? "I just won 🎉 a provably fair game using Zama’s #FHEVM encryption!"
+    : isLose
+    ? "I just lost 💥 a provably fair game using Zama’s #FHEVM encryption!"
+    : "I just played a provably fair game using Zama’s #FHEVM encryption!";
+
   const {
     showVerifyModal,
     setShowVerifyModal,
@@ -122,6 +131,25 @@ export default function App() {
               style={{ marginLeft: 12 }}
             >
               🔎 Verify Fairness
+            </button>
+            <button
+              onClick={() => {
+                const gameUrl = "https://confidential-bomb.vercel.app";
+                const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                  `${resultText} Try it out here: ${gameUrl}`
+                )}`;
+                window.open(tweetUrl, "_blank");
+              }}
+              style={{
+                padding: "10px 18px",
+                background: "#1DA1F2",
+                border: "none",
+                borderRadius: 10,
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              🐦 Share on X
             </button>
           </div>
         )}
