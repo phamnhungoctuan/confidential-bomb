@@ -141,6 +141,7 @@ export default function App() {
                 window.open(tweetUrl, "_blank");
               }}
               style={{
+                marginLeft: 12,
                 padding: "10px 18px",
                 background: "#1DA1F2",
                 border: "none",
