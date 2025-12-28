@@ -21,15 +21,6 @@ export function Footer() {
           ZAMA
         </a>
       </p>
-      <a
-        href="https://github.com/phamnhungoctuan"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: "#bbb", textDecoration: "none" }}
-      >
-        🐙 github.com/phamnhungoctuan
-      </a>
-
       <p
           style={{
             marginTop: 20,
